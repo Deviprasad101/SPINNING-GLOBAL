@@ -55,9 +55,23 @@
             overflow: hidden;
         }
 
-        #map {
+        /* ── Star background canvas ── */
+        #star-canvas {
+            position: fixed;
+            inset: 0;
             width: 100vw;
             height: 100vh;
+            z-index: 0;
+            background: radial-gradient(ellipse at 50% 60%, #0a0f2e 0%, #020408 70%, #000000 100%);
+            pointer-events: none;
+        }
+
+        #map {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            background: transparent;
         }
 
         /* ═══════════════════════════════════════════
@@ -565,6 +579,67 @@
         .maplibregl-ctrl button:hover {
             background: rgba(99, 102, 241, .2) !important;
         }
+
+        /* ═══════════════════════════════════════════
+       FILTER BOX
+    ═══════════════════════════════════════════ */
+        #filter-box {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            width: 380px;
+            z-index: 200;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #filter-box.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .filter-btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .filter-btn {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: var(--text);
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: background 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        .filter-output {
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--muted);
+            min-height: 44px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 
@@ -582,6 +657,9 @@
         <span id="zoom-badge">Zoom 4</span>
         <span id="coords">Move cursor over map</span>
     </header>
+
+    <!-- Stars Background -->
+    <canvas id="star-canvas"></canvas>
 
     <!-- Map -->
     <div id="map"></div>
@@ -628,6 +706,20 @@
 
     <!-- Measure Tooltip -->
     <div id="measure-tooltip">📏 Click map to start measuring</div>
+
+    <!-- Query Filter Box -->
+    <div id="filter-box">
+        <div class="bp-title">Feature Query & Filter</div>
+        <div class="filter-btn-grid">
+            <button class="filter-btn" id="f-btn-load">1. Load GeoJSON</button>
+            <button class="filter-btn" id="f-btn-clear">2. Clear Filter</button>
+            <button class="filter-btn" id="f-btn-pop">Filter: Pop &gt; 100M</button>
+            <button class="filter-btn" id="f-btn-eu">Filter: Europe</button>
+            <button class="filter-btn" id="f-btn-query">Query Rendered</button>
+            <button class="filter-btn" id="f-btn-query-af">Query African</button>
+        </div>
+        <div id="f-output" class="filter-output">Awaiting action...</div>
+    </div>
 
     <!-- Hint pill -->
     <div id="hint-pill">☰ <strong>Top-right</strong> → open Control Grid to explore all tools</div>
@@ -767,6 +859,100 @@
         });
 
         // ═══════════════════════════════════════════════════════
+        //  STAR BACKGROUND CANVAS — animated twinkling starfield
+        // ═══════════════════════════════════════════════════════
+        (function initStars() {
+            const canvas = document.getElementById('star-canvas');
+            const ctx = canvas.getContext('2d');
+            const NUM_STARS = 320;
+            const stars = [];
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            // Generate stars with random positions, sizes, speeds and base opacity
+            for (let i = 0; i < NUM_STARS; i++) {
+                stars.push({
+                    x: Math.random(),           // 0–1 fraction of canvas width
+                    y: Math.random(),           // 0–1 fraction of canvas height
+                    r: Math.random() * 1.5 + 0.3, // radius 0.3–1.8px
+                    baseAlpha: Math.random() * 0.6 + 0.2, // 0.2–0.8
+                    alpha: 0,
+                    speed: Math.random() * 0.008 + 0.002, // twinkle speed
+                    phase: Math.random() * Math.PI * 2,   // start phase
+                    // rare bright stars get a slight blue/white color
+                    color: Math.random() > 0.85
+                        ? `hsl(${210 + Math.random() * 40}, 80%, 90%)`
+                        : '#ffffff',
+                });
+            }
+
+            // Add a handful of larger "feature" stars
+            for (let i = 0; i < 18; i++) {
+                stars.push({
+                    x: Math.random(), y: Math.random(),
+                    r: Math.random() * 2.5 + 1.5,
+                    baseAlpha: Math.random() * 0.4 + 0.15,
+                    alpha: 0,
+                    speed: Math.random() * 0.004 + 0.001,
+                    phase: Math.random() * Math.PI * 2,
+                    color: Math.random() > 0.5
+                        ? `hsl(${190 + Math.random() * 60}, 70%, 85%)`
+                        : `hsl(${30 + Math.random() * 20}, 80%, 90%)`, // warm gold
+                });
+            }
+
+            let t = 0;
+            function drawStars() {
+                const W = canvas.width;
+                const H = canvas.height;
+
+                // Clear with deep-space gradient background
+                const grad = ctx.createRadialGradient(W * 0.5, H * 0.6, 0, W * 0.5, H * 0.6, Math.max(W, H) * 0.85);
+                grad.addColorStop(0, '#081028');
+                grad.addColorStop(0.45, '#030810');
+                grad.addColorStop(1, '#000000');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, W, H);
+
+                t += 0.016;
+
+                for (const s of stars) {
+                    // Smooth sinusoidal twinkle
+                    s.alpha = s.baseAlpha * (0.55 + 0.45 * Math.sin(t * s.speed * 60 + s.phase));
+
+                    const px = s.x * W;
+                    const py = s.y * H;
+
+                    // Glow halo for larger stars
+                    if (s.r > 1.2) {
+                        const glow = ctx.createRadialGradient(px, py, 0, px, py, s.r * 5);
+                        glow.addColorStop(0, s.color.replace(')', `, ${s.alpha * 0.5})`).replace('hsl', 'hsla').replace('rgb', 'rgba'));
+                        glow.addColorStop(1, 'rgba(0,0,0,0)');
+                        ctx.beginPath();
+                        ctx.arc(px, py, s.r * 5, 0, Math.PI * 2);
+                        ctx.fillStyle = glow;
+                        ctx.fill();
+                    }
+
+                    // Core star dot
+                    ctx.beginPath();
+                    ctx.arc(px, py, s.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+                    ctx.fill();
+                }
+
+                requestAnimationFrame(drawStars);
+            }
+
+            drawStars();
+        })();
+
+        // ═══════════════════════════════════════════════════════
         //  HUD — live coords & zoom
         // ═══════════════════════════════════════════════════════
         const coordsEl = document.getElementById('coords');
@@ -799,7 +985,9 @@
         function closeAllSubPanels() {
             document.getElementById('basemap-picker').classList.remove('show');
             document.getElementById('search-box').classList.remove('show');
+            document.getElementById('filter-box').classList.remove('show');
             stopMeasure();
+            if (typeof stopFilter === 'function') stopFilter();
         }
 
         let isDraggingWrapper = false;
@@ -885,6 +1073,7 @@
             { id: 'pitch', icon: '◱', label: 'Tilt', tip: 'Toggle tilt', action: togglePitch },
             { id: 'print', icon: '🖨️', label: 'Print', tip: 'Print map', action: printMap },
             { id: 'fit', icon: '⊡', label: 'Fit', tip: 'Fit whole world', action: fitWorld },
+            { id: 'query_filter', icon: '🎛️', label: 'Filter', tip: 'Feature Query & Filter', action: toggleFilterBox },
             { id: 'monitor', icon: '🛰️', label: 'Monitor', tip: 'Global Monitor (React)', action: () => { document.getElementById('react-globe-root').style.display = 'block'; closePanel(); } },
             { id: '3dbuildilngs', icon: '🏙️', label: '3D City', tip: '3D Buildings Map', action: () => { window.open('buildings_3d_example.html', '_blank'); closePanel(); } },
         ];
@@ -1094,6 +1283,8 @@
                 // Re-apply terrain & globe after new style loads
                 isTerrain = false;
                 setActive('terrain', false);
+                countriesLoaded = false;
+                document.getElementById('f-output').innerHTML = "Basemap changed. Reload GeoJSON.";
                 map.once('style.load', () => {
                     if (isGlobe) {
                         try { map.setProjection({ type: 'globe' }); } catch (e) { }
@@ -1235,7 +1426,102 @@
             if (!isMeasuring) {
                 document.getElementById('basemap-picker').classList.remove('show');
                 document.getElementById('search-box').classList.remove('show');
+                document.getElementById('filter-box').classList.remove('show');
             }
+        });
+
+        // 17. Query Filter Tool logic
+        let isFilterActive = false;
+        let countriesLoaded = false;
+
+        function stopFilter() {
+            isFilterActive = false;
+            setActive('query_filter', false);
+            document.getElementById('filter-box').classList.remove('show');
+
+            if (map.getLayer("countries")) map.removeLayer("countries");
+            if (map.getSource("countries")) map.removeSource("countries");
+
+            countriesLoaded = false;
+            const fOut = document.getElementById('f-output');
+            if (fOut) fOut.innerHTML = "Awaiting action...";
+        }
+
+        function toggleFilterBox() {
+            if (!isFilterActive) {
+                closeAllSubPanels();
+                isFilterActive = true;
+                document.getElementById('filter-box').classList.add('show');
+                setActive('query_filter', true);
+            } else {
+                // When toggled off, cleanly remove everything
+                stopFilter();
+            }
+        }
+
+        const fOutput = document.getElementById('f-output');
+
+        document.getElementById('f-btn-load').addEventListener('click', () => {
+            if (countriesLoaded) {
+                fOutput.innerHTML = "GeoJSON already loaded for this basemap.";
+                return;
+            }
+            if (!map.getSource("countries")) {
+                map.addSource("countries", {
+                    type: "geojson",
+                    data: "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson"
+                });
+            }
+            if (!map.getLayer("countries")) {
+                map.addLayer({
+                    id: "countries",
+                    type: "fill",
+                    source: "countries",
+                    paint: {
+                        "fill-color": "#627BC1",
+                        "fill-opacity": 0.5,
+                        "fill-outline-color": "#333",
+                    }
+                });
+            }
+            countriesLoaded = true;
+            fOutput.innerHTML = "Loaded countries GeoJSON data.";
+            map.flyTo({ zoom: 1, duration: 2000 });
+        });
+
+        document.getElementById('f-btn-pop').addEventListener('click', () => {
+            if (!countriesLoaded) return fOutput.innerHTML = "Load GeoJSON first.";
+            map.setFilter("countries", [">", ["get", "pop_est"], 100000000]);
+            fOutput.innerHTML = "Filter applied: Population > 100 Million.";
+        });
+
+        document.getElementById('f-btn-eu').addEventListener('click', () => {
+            if (!countriesLoaded) return fOutput.innerHTML = "Load GeoJSON first.";
+            map.setFilter("countries", ["==", ["get", "continent"], "Europe"]);
+            fOutput.innerHTML = "Filter applied: Europe Only.";
+        });
+
+        document.getElementById('f-btn-clear').addEventListener('click', () => {
+            if (!countriesLoaded) return fOutput.innerHTML = "Load GeoJSON first.";
+            map.setFilter("countries", null);
+            fOutput.innerHTML = "Filter cleared: Showing all.";
+        });
+
+        document.getElementById('f-btn-query').addEventListener('click', () => {
+            if (!countriesLoaded) return fOutput.innerHTML = "Load GeoJSON first.";
+            const features = map.queryRenderedFeatures({ layers: ["countries"] });
+            const unique = new Set(features.map(f => f.properties.name || "Unknown"));
+            fOutput.innerHTML = `Rendered Features (${unique.size}):<br/>` + Array.from(unique).slice(0, 5).join(", ") + (unique.size > 5 ? "..." : "");
+        });
+
+        document.getElementById('f-btn-query-af').addEventListener('click', () => {
+            if (!countriesLoaded) return fOutput.innerHTML = "Load GeoJSON first.";
+            const features = map.queryRenderedFeatures({
+                layers: ["countries"],
+                filter: ["==", ["get", "continent"], "Africa"]
+            });
+            const unique = new Set(features.map(f => f.properties.name || "Unknown"));
+            fOutput.innerHTML = `African countries in viewport (${unique.size}):<br/>` + Array.from(unique).slice(0, 5).map(v => " - " + v).join("<br/>");
         });
     </script>
 
