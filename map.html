@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>Interactive Map</title>
@@ -9,186 +10,200 @@
     <link href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css" rel="stylesheet" />
     <!-- PMTiles (loaded via ESM import below) -->
     <!-- maplibre-gl-layer-control CSS -->
-    <link href="https://unpkg.com/maplibre-gl-layer-control@0.14.1/dist/maplibre-gl-layer-control.css" rel="stylesheet" />
+    <link href="https://unpkg.com/maplibre-gl-layer-control@0.14.1/dist/maplibre-gl-layer-control.css"
+        rel="stylesheet" />
     <!-- maplibre-gl-components CSS -->
     <link href="https://unpkg.com/maplibre-gl-components@0.16.2/dist/maplibre-gl-components.css" rel="stylesheet" />
-    <!-- Geoman for drawing -->
-    <script src="https://cdn.jsdelivr.net/npm/@geoman-io/maplibre-geoman-free@0.6.1/dist/maplibre-geoman.umd.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/@geoman-io/maplibre-geoman-free@0.6.1/dist/maplibre-geoman.css" rel="stylesheet" />
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { height: 100%; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
     </style>
 </head>
+
 <body>
     <div id="map"></div>
     <script type="module">
         // Map state from Python
         const state = {
-  "center": [
-    -74.006,
-    40.7128
-  ],
-  "zoom": 15.0,
-  "style": "https://tiles.openfreemap.org/styles/liberty",
-  "bearing": -17.0,
-  "pitch": 60.0,
-  "width": "100%",
-  "height": "700px",
-  "layers": {
-    "3d-buildings": {
-      "id": "3d-buildings",
-      "type": "fill-extrusion"
-    }
-  },
-  "sources": {},
-  "controls": {
-    "layer-control": {
-      "layers": [
-        "3d-buildings"
-      ],
-      "position": "bottom-left",
-      "collapsed": true
-    },
-    "control-grid": {
-      "position": "top-right",
-      "collapsed": true,
-      "collapsible": true,
-      "exclude": [
-        "GeoportailFrance.plan",
-        "GeoportailFrance.orthos",
-        "GeoportailFrance.parcels",
-        "GeoportailFrance.CorineLandCover",
-        "GeoportailFrance.ignMaps",
-        "GeoportailFrance.parcel"
-      ]
-    },
-    "draw-control": {
-      "position": "top-left",
-      "drawModes": [
-        "polygon",
-        "line",
-        "rectangle",
-        "circle",
-        "marker"
-      ],
-      "editModes": [
-        "select",
-        "drag",
-        "change",
-        "rotate",
-        "delete"
-      ]
-    }
-  },
-  "max_pitch": 85.0,
-  "js_calls": [
-    {
-      "id": 1,
-      "method": "addLayerControl",
-      "args": [],
-      "kwargs": {
-        "layers": [],
-        "position": "top-right",
-        "collapsed": true
-      }
-    },
-    {
-      "id": 2,
-      "method": "addControlGrid",
-      "args": [],
-      "kwargs": {
-        "position": "top-right",
-        "collapsed": true,
-        "collapsible": true,
-        "showRowColumnControls": true,
-        "gap": 2
-      }
-    },
-    {
-      "id": 3,
-      "method": "addControlGrid",
-      "args": [],
-      "kwargs": {
-        "position": "top-right",
-        "collapsed": true,
-        "collapsible": true,
-        "showRowColumnControls": true,
-        "gap": 2,
-        "exclude": [
-          "GeoportailFrance.plan",
-          "GeoportailFrance.orthos",
-          "GeoportailFrance.parcels",
-          "GeoportailFrance.CorineLandCover",
-          "GeoportailFrance.ignMaps",
-          "GeoportailFrance.parcel"
-        ]
-      }
-    },
-    {
-      "id": 4,
-      "method": "addTerrain",
-      "args": [],
-      "kwargs": {
-        "source": {
-          "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
-          "encoding": "terrarium"
-        },
-        "exaggeration": 1.5
-      }
-    },
-    {
-      "id": 5,
-      "method": "add3DBuildings",
-      "args": [],
-      "kwargs": {
-        "source": "openmaptiles",
-        "minZoom": 14,
-        "fillExtrusionColor": "#4682B4",
-        "fillExtrusionOpacity": 0.8,
-        "heightProperty": "render_height",
-        "baseProperty": "render_min_height",
-        "layerId": "3d-buildings"
-      }
-    },
-    {
-      "id": 6,
-      "method": "addDrawControl",
-      "args": [],
-      "kwargs": {
-        "position": "top-left",
-        "drawModes": [
-          "polygon",
-          "line",
-          "rectangle",
-          "circle",
-          "marker"
-        ],
-        "editModes": [
-          "select",
-          "drag",
-          "change",
-          "rotate",
-          "delete"
-        ],
-        "collapsed": false
-      }
-    },
-    {
-      "id": 7,
-      "method": "addLayerControl",
-      "args": [],
-      "kwargs": {
-        "layers": [
-          "3d-buildings"
-        ],
-        "position": "bottom-left",
-        "collapsed": true
-      }
-    }
-  ]
-};
+            "center": [
+                -74.006,
+                40.7128
+            ],
+            "zoom": 15.0,
+            "style": "https://tiles.openfreemap.org/styles/liberty",
+            "bearing": -17.0,
+            "pitch": 60.0,
+            "width": "100%",
+            "height": "700px",
+            "layers": {
+                "3d-buildings": {
+                    "id": "3d-buildings",
+                    "type": "fill-extrusion"
+                }
+            },
+            "sources": {},
+            "controls": {
+                "layer-control": {
+                    "layers": [
+                        "3d-buildings"
+                    ],
+                    "position": "bottom-left",
+                    "collapsed": true
+                },
+                "control-grid": {
+                    "position": "top-right",
+                    "collapsed": true,
+                    "collapsible": true,
+                    "exclude": [
+                        "GeoportailFrance.plan",
+                        "GeoportailFrance.orthos",
+                        "GeoportailFrance.parcels",
+                        "GeoportailFrance.CorineLandCover",
+                        "GeoportailFrance.ignMaps",
+                        "GeoportailFrance.parcel"
+                    ]
+                },
+                "draw-control": {
+                    "position": "top-left",
+                    "drawModes": [
+                        "polygon",
+                        "line",
+                        "rectangle",
+                        "circle",
+                        "marker"
+                    ],
+                    "editModes": [
+                        "select",
+                        "drag",
+                        "change",
+                        "rotate",
+                        "delete"
+                    ]
+                }
+            },
+            "max_pitch": 85.0,
+            "js_calls": [
+                {
+                    "id": 1,
+                    "method": "addLayerControl",
+                    "args": [],
+                    "kwargs": {
+                        "layers": [],
+                        "position": "top-right",
+                        "collapsed": true
+                    }
+                },
+                {
+                    "id": 2,
+                    "method": "addControlGrid",
+                    "args": [],
+                    "kwargs": {
+                        "position": "top-right",
+                        "collapsed": true,
+                        "collapsible": true,
+                        "showRowColumnControls": true,
+                        "gap": 2
+                    }
+                },
+                {
+                    "id": 3,
+                    "method": "addControlGrid",
+                    "args": [],
+                    "kwargs": {
+                        "position": "top-right",
+                        "collapsed": true,
+                        "collapsible": true,
+                        "showRowColumnControls": true,
+                        "gap": 2,
+                        "exclude": [
+                            "GeoportailFrance.plan",
+                            "GeoportailFrance.orthos",
+                            "GeoportailFrance.parcels",
+                            "GeoportailFrance.CorineLandCover",
+                            "GeoportailFrance.ignMaps",
+                            "GeoportailFrance.parcel"
+                        ]
+                    }
+                },
+                {
+                    "id": 4,
+                    "method": "addTerrain",
+                    "args": [],
+                    "kwargs": {
+                        "source": {
+                            "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
+                            "encoding": "terrarium"
+                        },
+                        "exaggeration": 1.5
+                    }
+                },
+                {
+                    "id": 5,
+                    "method": "add3DBuildings",
+                    "args": [],
+                    "kwargs": {
+                        "source": "openmaptiles",
+                        "minZoom": 14,
+                        "fillExtrusionColor": "#4682B4",
+                        "fillExtrusionOpacity": 0.8,
+                        "heightProperty": "render_height",
+                        "baseProperty": "render_min_height",
+                        "layerId": "3d-buildings"
+                    }
+                },
+                {
+                    "id": 6,
+                    "method": "addDrawControl",
+                    "args": [],
+                    "kwargs": {
+                        "position": "top-left",
+                        "drawModes": [
+                            "polygon",
+                            "line",
+                            "rectangle",
+                            "circle",
+                            "marker"
+                        ],
+                        "editModes": [
+                            "select",
+                            "drag",
+                            "change",
+                            "rotate",
+                            "delete"
+                        ],
+                        "collapsed": false
+                    }
+                },
+                {
+                    "id": 7,
+                    "method": "addLayerControl",
+                    "args": [],
+                    "kwargs": {
+                        "layers": [
+                            "3d-buildings"
+                        ],
+                        "position": "bottom-left",
+                        "collapsed": true
+                    }
+                }
+            ]
+        };
 
         // Track added layers for layer control
         const addedLayers = [];
@@ -466,7 +481,7 @@
         maplibregl.addProtocol("pmtiles", pmtilesProtocol.tile);
         const PMTiles = pmtilesModule.PMTiles;
 
-        map.on('load', async function() {
+        map.on('load', async function () {
             // 1. Replay ALL js_calls first (markers, legends, GeoJSON, etc.)
             for (const call of state.js_calls || []) {
                 try {
@@ -513,9 +528,7 @@
             }
 
             // 5. Add draw control if configured
-            if (drawControlConfig || (state.controls && state.controls['draw-control'])) {
-                createDrawControl(drawControlConfig || state.controls['draw-control']);
-            }
+            // Draw control removed
         });
 
         async function executeMethod(method, args, kwargs) {
@@ -645,11 +658,7 @@
                     break;
                 }
 
-                case 'addDrawControl': {
-                    // Store config for later (after map is fully loaded)
-                    drawControlConfig = kwargs;
-                    break;
-                }
+
 
                 case 'addControlGrid': {
                     // Store config for later (add after layer control)
@@ -994,8 +1003,8 @@
                                 // Infer layer type from name when geometry_type is missing
                                 function inferFromName(name) {
                                     const lower = name.toLowerCase();
-                                    const linePatterns = ['road','street','highway','path','route','rail','transit','boundary','boundaries','border','river','stream','canal','waterway','line','edge','track','ferry','bridge','tunnel','physical_line','transportation'];
-                                    const pointPatterns = ['poi','pois','point','place','places','marker','stop','station','node','peak','city','town','village','label','symbol','icon','address','physical_point','mountain_peak'];
+                                    const linePatterns = ['road', 'street', 'highway', 'path', 'route', 'rail', 'transit', 'boundary', 'boundaries', 'border', 'river', 'stream', 'canal', 'waterway', 'line', 'edge', 'track', 'ferry', 'bridge', 'tunnel', 'physical_line', 'transportation'];
+                                    const pointPatterns = ['poi', 'pois', 'point', 'place', 'places', 'marker', 'stop', 'station', 'node', 'peak', 'city', 'town', 'village', 'label', 'symbol', 'icon', 'address', 'physical_point', 'mountain_peak'];
                                     for (const p of linePatterns) { if (lower === p || lower.includes(p)) return 'line'; }
                                     for (const p of pointPatterns) { if (lower === p || lower.includes(p)) return 'circle'; }
                                     return 'fill';
@@ -1313,7 +1322,7 @@
                         attributionControl: false
                     });
 
-                    rightMap.on('load', function() {
+                    rightMap.on('load', function () {
                         // Replay layer-adding calls directly on rightMap
                         for (const call of (state.js_calls || [])) {
                             try {
@@ -1416,7 +1425,7 @@
                                         }
                                     }
                                 }
-                            } catch(e) { /* skip failures */ }
+                            } catch (e) { /* skip failures */ }
                         }
                         // Show only the right layer, hide everything else
                         try {
@@ -1425,14 +1434,14 @@
                                 if (l.id === rightLayer) {
                                     rightMap.setLayoutProperty(l.id, 'visibility', 'visible');
                                 } else {
-                                    try { rightMap.setLayoutProperty(l.id, 'visibility', 'none'); } catch(e) {}
+                                    try { rightMap.setLayoutProperty(l.id, 'visibility', 'none'); } catch (e) { }
                                 }
                             }
-                        } catch(e) {}
+                        } catch (e) { }
                     });
 
                     // Sync camera
-                    map.on('move', function() {
+                    map.on('move', function () {
                         rightMap.jumpTo({
                             center: map.getCenter(),
                             zoom: map.getZoom(),
@@ -1451,12 +1460,12 @@
                     mapEl.appendChild(splitSlider);
 
                     let splitDragging = false;
-                    splitSlider.addEventListener('pointerdown', function(e) {
+                    splitSlider.addEventListener('pointerdown', function (e) {
                         splitDragging = true;
                         splitSlider.setPointerCapture(e.pointerId);
                         e.preventDefault();
                     });
-                    window.addEventListener('pointermove', function(e) {
+                    window.addEventListener('pointermove', function (e) {
                         if (!splitDragging) return;
                         const rect = mapEl.getBoundingClientRect();
                         const x = e.clientX - rect.left;
@@ -1464,7 +1473,7 @@
                         splitSlider.style.left = pct + '%';
                         rightContainer.style.clipPath = 'inset(0 0 0 ' + pct + '%)';
                     });
-                    window.addEventListener('pointerup', function() { splitDragging = false; });
+                    window.addEventListener('pointerup', function () { splitDragging = false; });
                     break;
                 }
 
@@ -1740,30 +1749,8 @@
             scheduleLayerControlOrderSync();
         }
 
-        function createDrawControl(config) {
-            // Check if Geoman is available (UMD exports to Geoman.Geoman)
-            const GeomanClass = (typeof Geoman !== 'undefined' && Geoman.Geoman)
-                ? Geoman.Geoman
-                : (typeof window !== 'undefined' && window.Geoman && window.Geoman.Geoman)
-                    ? window.Geoman.Geoman
-                    : null;
 
-            if (!GeomanClass) {
-                console.warn('Geoman library not loaded. Draw control not available.');
-                return;
-            }
-
-            const position = config.position || 'top-right';
-
-            // Initialize Geoman
-            const geoman = new GeomanClass(map, {
-                position: position
-            });
-
-            map.on('gm:loaded', () => {
-                console.log('Geoman draw control loaded');
-            });
-        }
     </script>
 </body>
+
 </html>

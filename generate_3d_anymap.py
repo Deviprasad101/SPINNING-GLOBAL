@@ -24,7 +24,6 @@ m.add_3d_buildings(
     fill_extrusion_color="#4682B4", # Steel blue
     fill_extrusion_opacity=0.8
 )
-m.add_draw_control(position="top-left")
 m.add_layer_control(position="bottom-left")
 
 m.to_html("buildings_3d_example.html")
