@@ -44,6 +44,7 @@
             --radius: 10px;
             --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             --grid-btn-size: 42px;
+            --top-bar-height: 80px;
         }
 
         html,
@@ -58,20 +59,56 @@
         /* ── Star background canvas ── */
         #star-canvas {
             position: fixed;
-            inset: 0;
+            top: var(--top-bar-height);
+            left: 0;
             width: 100vw;
-            height: 100vh;
+            height: calc(100vh - var(--top-bar-height));
             z-index: 0;
             background: radial-gradient(ellipse at 50% 60%, #0a0f2e 0%, #020408 70%, #000000 100%);
             pointer-events: none;
         }
 
         #map {
-            position: relative;
+            position: absolute;
+            top: var(--top-bar-height);
+            left: 0;
             width: 100vw;
-            height: 100vh;
+            height: calc(100vh - var(--top-bar-height));
             z-index: 1;
             background: transparent;
+        }
+
+        /* ═══════════════════════════════════════════
+       TOP BAR
+    ═══════════════════════════════════════════ */
+        #top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--top-bar-height);
+            background: #ffffff;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            border-bottom: 2px solid #e1e4e8;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .top-bar-logos {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .top-bar-logos img {
+            max-width: 100%;
+            max-height: 70px;
+            object-fit: contain;
         }
 
         /* ═══════════════════════════════════════════
@@ -79,7 +116,7 @@
     ═══════════════════════════════════════════ */
         #hud {
             position: fixed;
-            top: 0;
+            top: var(--top-bar-height);
             left: 0;
             right: 0;
             z-index: 200;
@@ -151,7 +188,7 @@
     ═══════════════════════════════════════════ */
         #ctrl-grid-wrapper {
             position: fixed;
-            top: 56px;
+            top: calc(var(--top-bar-height) + 16px);
             right: 12px;
             z-index: 300;
         }
@@ -322,7 +359,7 @@
     ═══════════════════════════════════════════ */
         #basemap-picker {
             position: fixed;
-            top: 56px;
+            top: calc(var(--top-bar-height) + 16px);
             right: 270px;
             z-index: 350;
             background: var(--surface);
@@ -408,7 +445,7 @@
     ═══════════════════════════════════════════ */
         #search-box {
             position: fixed;
-            top: 56px;
+            top: calc(var(--top-bar-height) + 16px);
             right: 270px;
             z-index: 350;
             background: var(--surface);
@@ -585,7 +622,7 @@
     ═══════════════════════════════════════════ */
         #filter-box {
             position: fixed;
-            top: 24px;
+            top: calc(var(--top-bar-height) + 16px);
             left: 50%;
             transform: translateX(-50%) translateY(-20px);
             background: var(--surface);
@@ -647,6 +684,13 @@
 
     <!-- React Globe Monitor Overlay (Hidden by default, z-index overlays the map entirely) -->
     <div id="react-globe-root" style="display: none; position: fixed; inset: 0; z-index: 999999; background: #03050f;">
+    </div>
+
+    <!-- TOP BAR -->
+    <div id="top-bar">
+        <div class="top-bar-logos">
+            <img src="geointellab_logo.jpeg" alt="GEO-INTEL LAB Banner" />
+        </div>
     </div>
 
     <!-- HUD -->
