@@ -1099,6 +1099,7 @@
         let measureMarkers = [];
         let isMinimapOn = false;
         let minimapMap = null;
+        let isClusteringOn = false;
 
         const CONTROLS = [
             { id: 'fullscreen', icon: '⛶', label: 'Full', tip: 'Fullscreen', action: toggleFullscreen },
@@ -1110,6 +1111,7 @@
             { id: 'basemap', icon: '🗂️', label: 'Maps', tip: 'Switch basemap', action: toggleBasemap },
             { id: 'measure', icon: '📏', label: 'Measure', tip: 'Measure distance', action: toggleMeasure },
             { id: 'minimap', icon: '🗺️', label: 'Mini', tip: 'Mini map', action: toggleMinimap },
+            { id: 'cluster', icon: '◉', label: 'Cluster', tip: 'Toggle earthquake clustering', action: toggleClustering },
             { id: 'zoomin', icon: '＋', label: 'Zoom+', tip: 'Zoom in', action: () => map.zoomIn() },
             { id: 'zoomout', icon: '－', label: 'Zoom-', tip: 'Zoom out', action: () => map.zoomOut() },
             { id: 'home', icon: '🏠', label: 'Home', tip: 'Jump to India', action: goHome },
@@ -1249,6 +1251,109 @@
                 map.easeTo({ pitch: 0, duration: 600 });
             }
             setActive('terrain', isTerrain);
+        }
+
+        // 5.5 Earthquake Clustering
+        async function toggleClustering() {
+            isClusteringOn = !isClusteringOn;
+            if (isClusteringOn) {
+                try {
+                    showToast('Loading earthquake data...' , 2000);
+                    const earthquakeUrl = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson';
+                    const response = await fetch(earthquakeUrl);
+                    const geojson = await response.json();
+                    if (!map.getSource('earthquakes')) {
+                        map.addSource('earthquakes', {
+                            type: 'geojson',
+                            data: geojson,
+                            cluster: true,
+                            clusterMaxZoom: 14,
+                            clusterRadius: 50,
+                        });
+                        map.addLayer({
+                            id: 'clusters',
+                            type: 'circle',
+                            source: 'earthquakes',
+                            filter: ['has', 'point_count'],
+                            paint: {
+                                'circle-color': [
+                                    'step',
+                                    ['get', 'point_count'],
+                                    '#2dc4b2',
+                                    10,
+                                    '#3bb3c3',
+                                    50,
+                                    '#669ec4',
+                                    100,
+                                    '#8b88b6',
+                                    500,
+                                    '#a2719b',
+                                ],
+                                'circle-radius': [
+                                    'step',
+                                    ['get', 'point_count'],
+                                    20,
+                                    100,
+                                    30,
+                                    750,
+                                    40,
+                                ],
+                            },
+                        });
+                        map.addLayer({
+                            id: 'cluster-count',
+                            type: 'symbol',
+                            source: 'earthquakes',
+                            filter: ['has', 'point_count'],
+                            layout: {
+                                'text-field': '{point_count_abbreviated}',
+                                'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+                                'text-size': 12,
+                            },
+                            paint: { 'text-color': '#fff' },
+                        });
+                        map.addLayer({
+                            id: 'unclustered-point',
+                            type: 'circle',
+                            source: 'earthquakes',
+                            filter: ['!', ['has', 'point_count']],
+                            paint: {
+                                'circle-color': '#e55e5e',
+                                'circle-radius': 5,
+                                'circle-stroke-width': 1,
+                                'circle-stroke-color': '#fff',
+                            },
+                        });
+                        map.on('click', 'clusters', (e) => {
+                            const features = map.querySourceFeatures('earthquakes', {
+                                sourceLayer: null,
+                                filter: ['within', ['literal', e.features[0].properties.cluster_id ? { cluster: e.features[0].properties.cluster_id } : null]],
+                            });
+                            const clusterId = e.features[0].properties.cluster_id;
+                            map.getSource('earthquakes').getClusterExpansionZoom(clusterId, (err, zoom) => {
+                                if (err) return;
+                                map.easeTo({
+                                    center: e.lngLat,
+                                    zoom: zoom,
+                                    duration: 500,
+                                });
+                            });
+                        });
+                    }
+                    showToast('Earthquakes clustered', 2000);
+                } catch (e) {
+                    showToast('Error loading earthquake data', 3000);
+                    console.error(e);
+                    isClusteringOn = false;
+                }
+            } else {
+                if (map.getLayer('clusters')) map.removeLayer('clusters');
+                if (map.getLayer('cluster-count')) map.removeLayer('cluster-count');
+                if (map.getLayer('unclustered-point')) map.removeLayer('unclustered-point');
+                if (map.getSource('earthquakes')) map.removeSource('earthquakes');
+                showToast('Clustering disabled', 1500);
+            }
+            setActive('cluster', isClusteringOn);
         }
 
         // 6. Search
