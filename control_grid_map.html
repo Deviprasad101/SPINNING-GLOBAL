@@ -677,6 +677,189 @@
             max-height: 150px;
             overflow-y: auto;
         }
+
+        /* ═══════════════════════════════════════════
+       3D BUILDINGS PANEL
+    ═══════════════════════════════════════════ */
+        #buildings-panel {
+            position: fixed;
+            top: calc(var(--top-bar-height) + 16px);
+            right: 270px;
+            z-index: 350;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(24px);
+            box-shadow: var(--shadow);
+            padding: 14px;
+            display: none;
+            width: 340px;
+        }
+
+        #buildings-panel.show {
+            display: block;
+        }
+
+        .bp3-title {
+            font-size: .68rem;
+            color: var(--accent);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            margin-bottom: 4px;
+        }
+
+        .bp3-subtitle {
+            font-size: .65rem;
+            color: var(--muted);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .city-card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 7px;
+            margin-bottom: 12px;
+        }
+
+        .city-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 9px 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background .18s, border-color .18s, transform .15s;
+            font-size: .78rem;
+            color: var(--text);
+            font-family: inherit;
+        }
+
+        .city-card:hover {
+            background: rgba(99, 102, 241, .18);
+            border-color: rgba(99, 102, 241, .4);
+            transform: translateY(-1px);
+        }
+
+        .city-card.active {
+            background: rgba(99, 102, 241, .25);
+            border-color: var(--primary);
+        }
+
+        .city-card-swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .bp3-toggle {
+            width: 100%;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            color: var(--text);
+            padding: 9px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: .76rem;
+            font-family: inherit;
+            font-weight: 600;
+            transition: background .2s;
+        }
+
+        .bp3-toggle:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        .bp3-toggle.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* 3D Buildings Search */
+        .bp3-search-wrap {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .bp3-search-input {
+            width: 100%;
+            padding: 8px 12px 8px 32px;
+            border-radius: 7px;
+            background: rgba(255, 255, 255, .07);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: .78rem;
+            font-family: inherit;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color .2s;
+        }
+
+        .bp3-search-input:focus {
+            border-color: var(--primary);
+        }
+
+        .bp3-search-input::placeholder {
+            color: var(--muted);
+        }
+
+        .bp3-search-icon {
+            position: absolute;
+            left: 9px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: .85rem;
+            pointer-events: none;
+            opacity: .5;
+        }
+
+        .bp3-search-results {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: rgba(16, 17, 32, 0.97);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            z-index: 500;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+        }
+
+        .bp3-search-results.open {
+            display: block;
+        }
+
+        .bp3-search-result-item {
+            padding: 8px 12px;
+            font-size: .74rem;
+            color: rgba(255, 255, 255, .75);
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, .05);
+            transition: background .12s;
+            line-height: 1.35;
+        }
+
+        .bp3-search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .bp3-search-result-item:hover {
+            background: rgba(99, 102, 241, .2);
+            color: #fff;
+        }
+
+        .bp3-search-result-item .result-sub {
+            font-size: .64rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
     </style>
 </head>
 
@@ -763,6 +946,26 @@
             <button class="filter-btn" id="f-btn-query-af">Query African</button>
         </div>
         <div id="f-output" class="filter-output">Awaiting action...</div>
+    </div>
+
+    <!-- 3D Buildings panel -->
+    <div id="buildings-panel">
+        <div class="bp3-title">🏙️ 3D City Explorer</div>
+        <div class="bp3-subtitle">Search any city or pick a preset below to fly there and render extruded 3D buildings.
+        </div>
+
+        <!-- Location Search -->
+        <div class="bp3-search-wrap">
+            <span class="bp3-search-icon">🔍</span>
+            <input id="bp3-search-input" class="bp3-search-input" type="search" placeholder="Search city, address…"
+                autocomplete="off" />
+            <div id="bp3-search-results" class="bp3-search-results"></div>
+        </div>
+
+        <div class="city-card-grid" id="bp3-city-grid"></div>
+        <button class="bp3-toggle" id="bp3-toggle-btn"
+            onclick="is3DBuildingsOn ? remove3DBuildings() : load3DBuildings(CITY_PRESETS[active3DCity || 0], active3DCity || 0)">Load
+            3D Buildings</button>
     </div>
 
     <!-- Hint pill -->
@@ -1030,6 +1233,7 @@
             document.getElementById('basemap-picker').classList.remove('show');
             document.getElementById('search-box').classList.remove('show');
             document.getElementById('filter-box').classList.remove('show');
+            document.getElementById('buildings-panel').classList.remove('show');
             stopMeasure();
             if (typeof stopFilter === 'function') stopFilter();
         }
@@ -1121,7 +1325,7 @@
             { id: 'fit', icon: '⊡', label: 'Fit', tip: 'Fit whole world', action: fitWorld },
             { id: 'query_filter', icon: '🎛️', label: 'Filter', tip: 'Feature Query & Filter', action: toggleFilterBox },
             { id: 'monitor', icon: '🛰️', label: 'Monitor', tip: 'Global Monitor (React)', action: () => { document.getElementById('react-globe-root').style.display = 'block'; closePanel(); } },
-            { id: '3dbuildilngs', icon: '🏙️', label: '3D City', tip: '3D Buildings Map', action: () => { window.open('buildings_3d_example.html', '_blank'); closePanel(); } },
+            { id: '3dbuildilngs', icon: '🏙️', label: '3D City', tip: '3D Buildings Map', action: toggleBuildingsPanel },
         ];
 
         function buildGrid() {
@@ -1258,7 +1462,7 @@
             isClusteringOn = !isClusteringOn;
             if (isClusteringOn) {
                 try {
-                    showToast('Loading earthquake data...' , 2000);
+                    showToast('Loading earthquake data...', 2000);
                     const earthquakeUrl = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson';
                     const response = await fetch(earthquakeUrl);
                     const geojson = await response.json();
@@ -1439,6 +1643,10 @@
                         try { map.setProjection({ type: 'globe' }); } catch (e) { }
                     }
                 });
+                // ── Sync minimap to the same basemap ──
+                if (minimapMap) {
+                    minimapMap.setStyle(bm.url);
+                }
             });
             bpGrid.appendChild(item);
         });
@@ -1520,9 +1728,11 @@
             setActive('minimap', isMinimapOn);
 
             if (isMinimapOn && !minimapMap) {
+                // Use the CURRENT active basemap, not always index 0
+                const activeBm = BASEMAPS.find(b => b.id === currentBasemap) || BASEMAPS[0];
                 minimapMap = new maplibregl.Map({
                     container: 'minimap',
-                    style: BASEMAPS[0].url,
+                    style: activeBm.url,
                     center: map.getCenter(),
                     zoom: map.getZoom() - 3,
                     interactive: false,
@@ -1531,12 +1741,16 @@
             }
             if (isMinimapOn) {
                 map.on('move', syncMinimap);
+                map.on('zoom', syncMinimap);
             } else {
                 map.off('move', syncMinimap);
+                map.off('zoom', syncMinimap);
             }
         }
         function syncMinimap() {
-            if (minimapMap) minimapMap.setCenter(map.getCenter());
+            if (!minimapMap) return;
+            minimapMap.setCenter(map.getCenter());
+            minimapMap.setZoom(map.getZoom() - 3);
         }
 
         // 10. Zoom In/Out — handled inline
@@ -1672,6 +1886,232 @@
             const unique = new Set(features.map(f => f.properties.name || "Unknown"));
             fOutput.innerHTML = `African countries in viewport (${unique.size}):<br/>` + Array.from(unique).slice(0, 5).map(v => " - " + v).join("<br/>");
         });
+
+        // ═══════════════════════════════════════════════════════
+        //  3D BUILDINGS PANEL
+        // ═══════════════════════════════════════════════════════
+        let is3DBuildingsOn = false;
+        let active3DCity = null;
+
+        const CITY_PRESETS = [
+            // Mumbai — BKC financial district, neon gradient (height-based)
+            { name: 'Mumbai', icon: '🌊', center: [72.8656, 19.0728], zoom: 15, pitch: 62, bearing: 20, color: null, opacity: 0.90, terrain: null },
+            // Delhi — Connaught Place, electric violet
+            { name: 'Delhi', icon: '🕌', center: [77.2090, 28.6139], zoom: 15, pitch: 58, bearing: -25, color: '#7c3aed', opacity: 0.88, terrain: null },
+            // Bengaluru — MG Road tech district, cyan
+            { name: 'Bengaluru', icon: '💻', center: [77.5946, 12.9716], zoom: 15, pitch: 60, bearing: 40, color: '#06b6d4', opacity: 0.85, terrain: null },
+            // Hyderabad — HITECH City, golden amber
+            { name: 'Hyderabad', icon: '💎', center: [78.3805, 17.4347], zoom: 15.5, pitch: 60, bearing: -15, color: '#d97706', opacity: 0.90, terrain: null },
+            // Chennai — Anna Salai corridor, coral orange
+            { name: 'Chennai', icon: '🌅', center: [80.2707, 13.0827], zoom: 15, pitch: 55, bearing: 60, color: '#f97316', opacity: 0.85, terrain: null },
+            // Kolkata — Park Street, crimson
+            { name: 'Kolkata', icon: '🎭', center: [88.3639, 22.5726], zoom: 15, pitch: 58, bearing: -30, color: '#dc2626', opacity: 0.80, terrain: null },
+            // Pune — Shivajinagar IT hub, neon emerald
+            { name: 'Pune', icon: '🏫', center: [73.8567, 18.5204], zoom: 15, pitch: 60, bearing: 15, color: '#10b981', opacity: 0.85, terrain: null },
+            // Ahmedabad — SG Highway, hot pink
+            { name: 'Ahmedabad', icon: '🪁', center: [72.5714, 23.0225], zoom: 15, pitch: 58, bearing: 50, color: '#ec4899', opacity: 0.85, terrain: null },
+        ];
+
+        const defaultBuildingColorExpr = [
+            'interpolate', ['linear'], ['get', 'render_height'],
+            0, '#0d0d1a',   // near-black base
+            15, '#1a0533',   // deep violet
+            40, '#3b0764',   // dark purple
+            80, '#6d28d9',   // electric violet
+            140, '#c026d3',   // hot magenta
+            220, '#f59e0b',   // vibrant amber
+            350, '#fde68a',   // pale gold
+            500, '#ffffff'    // white crown
+        ];
+
+        function buildBuildingsPanel() {
+            const grid = document.getElementById('bp3-city-grid');
+            CITY_PRESETS.forEach((city, i) => {
+                const card = document.createElement('button');
+                card.className = 'city-card';
+                card.id = 'citycard-' + i;
+                const swatchColor = city.color || '#818cf8';
+                card.innerHTML = `<span class="city-card-swatch" style="background:${swatchColor}"></span>${city.icon} ${city.name}`;
+                card.addEventListener('click', () => flyToCity3D(i));
+                grid.appendChild(card);
+            });
+
+            // ── Search logic ──────────────────────────────────────
+            const inp = document.getElementById('bp3-search-input');
+            const resultBox = document.getElementById('bp3-search-results');
+            let bp3SearchTimer;
+
+            inp.addEventListener('input', () => {
+                clearTimeout(bp3SearchTimer);
+                const q = inp.value.trim();
+                if (q.length < 3) { resultBox.innerHTML = ''; resultBox.classList.remove('open'); return; }
+                bp3SearchTimer = setTimeout(() => doSearch3D(q), 380);
+            });
+
+            // Close results when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.bp3-search-wrap')) {
+                    resultBox.classList.remove('open');
+                }
+            });
+        }
+
+        async function doSearch3D(q) {
+            const resultBox = document.getElementById('bp3-search-results');
+            try {
+                const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6`);
+                const data = await r.json();
+                resultBox.innerHTML = '';
+                if (!data.length) {
+                    resultBox.innerHTML = '<div class="bp3-search-result-item" style="color:#64748b">No results found</div>';
+                    resultBox.classList.add('open');
+                    return;
+                }
+                data.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'bp3-search-result-item';
+                    const name = item.display_name.split(',').slice(0, 2).join(', ');
+                    const rest = item.display_name.split(',').slice(2, 4).join(', ');
+                    el.innerHTML = `<div>${name}</div><div class="result-sub">${rest}</div>`;
+                    el.addEventListener('click', () => {
+                        // Fly to searched location and load buildings
+                        const center = [+item.lon, +item.lat];
+                        map.flyTo({ center, zoom: 15, pitch: 60, bearing: -17, duration: 3000, essential: true });
+                        // Use a synthetic preset with no special color
+                        const searchPreset = { color: null, opacity: 0.85, terrain: null, minzoom: 14 };
+                        load3DBuildings(searchPreset, null);
+                        showToast(`📍 ${name} — 3D buildings loaded`);
+                        // Clear active city card
+                        document.querySelectorAll('.city-card').forEach(c => c.classList.remove('active'));
+                        active3DCity = null;
+                        // Close results & clear input
+                        resultBox.classList.remove('open');
+                        document.getElementById('bp3-search-input').value = name;
+                    });
+                    resultBox.appendChild(el);
+                });
+                resultBox.classList.add('open');
+            } catch (err) {
+                console.error('3D search error:', err);
+            }
+        }
+
+        function toggleBuildingsPanel() {
+            const panel = document.getElementById('buildings-panel');
+            const isOpen = panel.classList.contains('show');
+            closeAllSubPanels();
+            if (!isOpen) {
+                panel.classList.add('show');
+                setActive('3dbuildilngs', true);
+                if (!is3DBuildingsOn) load3DBuildings(CITY_PRESETS[0], 0);
+            } else {
+                setActive('3dbuildilngs', false);
+            }
+        }
+
+        function load3DBuildings(preset, index) {
+            const doLoad = () => {
+                // Remove previous
+                if (map.getLayer('3d-buildings')) map.removeLayer('3d-buildings');
+                if (map.getSource('ofm-buildings')) { /* source shared, keep it */ }
+                else {
+                    map.addSource('ofm-buildings', {
+                        type: 'vector',
+                        url: 'https://tiles.openfreemap.org/planet',
+                    });
+                }
+
+                // Find a label layer to insert buildings below
+                let labelLayerId;
+                const layers = map.getStyle().layers;
+                for (let i = 0; i < layers.length; i++) {
+                    if (layers[i].type === 'symbol') { labelLayerId = layers[i].id; break; }
+                }
+
+                const color = preset.color ? preset.color : defaultBuildingColorExpr;
+
+                map.addLayer({
+                    id: '3d-buildings',
+                    source: 'ofm-buildings',
+                    'source-layer': 'building',
+                    type: 'fill-extrusion',
+                    minzoom: preset.minzoom || 14,
+                    paint: {
+                        'fill-extrusion-color': color,
+                        'fill-extrusion-height': [
+                            'interpolate', ['linear'], ['zoom'],
+                            14, 0, 14.05, ['get', 'render_height']
+                        ],
+                        'fill-extrusion-base': [
+                            'interpolate', ['linear'], ['zoom'],
+                            14, 0, 14.05, ['get', 'render_min_height']
+                        ],
+                        'fill-extrusion-opacity': preset.opacity || 0.85,
+                        'fill-extrusion-vertical-gradient': true
+                    }
+                }, labelLayerId);
+
+                is3DBuildingsOn = true;
+                document.getElementById('bp3-toggle-btn').classList.add('active');
+                document.getElementById('bp3-toggle-btn').textContent = '✓ 3D Buildings ON — Click to Remove';
+
+                // Terrain
+                if (preset.terrain) {
+                    if (!map.getSource('terrain-dem')) {
+                        map.addSource('terrain-dem', {
+                            type: 'raster-dem',
+                            url: 'https://demotiles.maplibre.org/terrain-tiles/tiles.json',
+                            tileSize: 256
+                        });
+                    }
+                    map.setTerrain({ source: 'terrain-dem', exaggeration: preset.terrain });
+                } else {
+                    map.setTerrain(null);
+                }
+            };
+
+            if (map.isStyleLoaded()) doLoad();
+            else map.once('style.load', doLoad);
+        }
+
+        function remove3DBuildings() {
+            if (map.getLayer('3d-buildings')) map.removeLayer('3d-buildings');
+            if (map.getSource('ofm-buildings')) map.removeSource('ofm-buildings');
+            map.setTerrain(null);
+            is3DBuildingsOn = false;
+            active3DCity = null;
+            document.getElementById('bp3-toggle-btn').classList.remove('active');
+            document.getElementById('bp3-toggle-btn').textContent = 'Load 3D Buildings';
+            document.querySelectorAll('.city-card').forEach(c => c.classList.remove('active'));
+        }
+
+        function flyToCity3D(index) {
+            const city = CITY_PRESETS[index];
+            active3DCity = index;
+
+            // Update active card
+            document.querySelectorAll('.city-card').forEach(c => c.classList.remove('active'));
+            const card = document.getElementById('citycard-' + index);
+            if (card) card.classList.add('active');
+
+            // Fly
+            map.flyTo({
+                center: city.center,
+                zoom: city.zoom,
+                pitch: city.pitch,
+                bearing: city.bearing,
+                duration: 3000,
+                essential: true
+            });
+
+            // Load / update buildings
+            load3DBuildings(city, index);
+            showToast(`🏙️ ${city.name} — 3D buildings loaded`);
+        }
+
+        // Init panel on DOM ready
+        buildBuildingsPanel();
+
     </script>
 
     <!-- React Global Monitor Code -->
