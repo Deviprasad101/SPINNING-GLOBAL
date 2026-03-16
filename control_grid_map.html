@@ -860,6 +860,61 @@
             color: var(--muted);
             margin-top: 2px;
         }
+
+        /* ═══════════════════════════════════════════
+       ZARR DATA PANEL
+    ═══════════════════════════════════════════ */
+        #zarr-panel {
+            position: fixed;
+            top: calc(var(--top-bar-height) + 16px);
+            right: 270px;
+            z-index: 350;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(24px);
+            box-shadow: var(--shadow);
+            padding: 14px;
+            display: none;
+            width: 360px;
+        }
+
+        #zarr-panel.show {
+            display: block;
+        }
+
+        .zarr-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all .2s;
+            font-size: .78rem;
+        }
+
+        .zarr-card:hover {
+            background: rgba(16, 185, 129, .15);
+            border-color: rgba(16, 185, 129, .4);
+        }
+
+        .zarr-card.active {
+            background: rgba(16, 185, 129, .25);
+            border-color: #10b981;
+        }
+
+        .zarr-card-title {
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .zarr-card-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.70rem;
+            line-height: 1.35;
+        }
     </style>
 </head>
 
@@ -966,6 +1021,16 @@
         <button class="bp3-toggle" id="bp3-toggle-btn"
             onclick="is3DBuildingsOn ? remove3DBuildings() : load3DBuildings(CITY_PRESETS[active3DCity || 0], active3DCity || 0)">Load
             3D Buildings</button>
+    </div>
+
+    <!-- Zarr panel -->
+    <div id="zarr-panel">
+        <div class="bp3-title">🔥 Zarr Multi-Dimensional Data</div>
+        <div class="bp3-subtitle">GPU-accelerated visualization of massive multi-dimensional cloud-native Zarr datasets.
+        </div>
+        <div id="zarr-card-list"></div>
+        <button class="bp3-toggle" id="zarr-toggle-btn" style="margin-top:6px;" onclick="removeZarrLayer()">Clear Active
+            Zarr Layer</button>
     </div>
 
     <!-- Hint pill -->
@@ -1234,6 +1299,7 @@
             document.getElementById('search-box').classList.remove('show');
             document.getElementById('filter-box').classList.remove('show');
             document.getElementById('buildings-panel').classList.remove('show');
+            document.getElementById('zarr-panel').classList.remove('show');
             stopMeasure();
             if (typeof stopFilter === 'function') stopFilter();
         }
@@ -1326,6 +1392,7 @@
             { id: 'query_filter', icon: '🎛️', label: 'Filter', tip: 'Feature Query & Filter', action: toggleFilterBox },
             { id: 'monitor', icon: '🛰️', label: 'Monitor', tip: 'Global Monitor (React)', action: () => { document.getElementById('react-globe-root').style.display = 'block'; closePanel(); } },
             { id: '3dbuildilngs', icon: '🏙️', label: '3D City', tip: '3D Buildings Map', action: toggleBuildingsPanel },
+            { id: 'zarr_data', icon: '🔥', label: 'Zarr', tip: 'Cloud-native Zarr Data', action: toggleZarrPanel },
         ];
 
         function buildGrid() {
@@ -2111,6 +2178,133 @@
 
         // Init panel on DOM ready
         buildBuildingsPanel();
+
+        // ═══════════════════════════════════════════════════════
+        //  ZARR MULTIDIMENSIONAL DATA
+        // ═══════════════════════════════════════════════════════
+        let ZarrLayerClass = null;
+        let activeZarrLayer = null;
+
+        const ZARR_PRESETS = [
+            {
+                id: 'climate-prec',
+                title: 'Global Climate Pyramid',
+                desc: 'CarbonPlan 4D climate pyramid (v2). Precipitation for January.',
+                center: [-100, 40], zoom: 3, pitch: 0,
+                config: {
+                    source: "https://carbonplan-maps.s3.us-west-2.amazonaws.com/v2/demo/4d/tavg-prec-month",
+                    variable: "climate",
+                    clim: [0, 300],
+                    colormap: ["#f7fbff", "#deebf7", "#c6dbef", "#9ecae1", "#6baed6", "#4292c6", "#2171b5", "#08519c", "#08306b"],
+                    opacity: 0.8,
+                    selector: { band: "prec", month: 1 },
+                    spatial_dimensions: { lat: "y", lon: "x" },
+                    zarr_version: 2
+                }
+            },
+            {
+                id: 'ocean-temp',
+                title: 'Ocean Temperature',
+                desc: 'Zarr v3 pyramid dataset with ocean temperature in EPSG:3857.',
+                center: [0, 30], zoom: 2, pitch: 0,
+                config: {
+                    source: "https://atlantis-vis-o.s3-ext.jc.rl.ac.uk/noc-npd-era5-demo/npd-eorca1-era5v1/gn/T1y/tos_con",
+                    variable: "tos_con",
+                    clim: [0, 50],
+                    colormap: ["#000004", "#1b0c41", "#4a0c6b", "#781c6d", "#a52c60", "#cf4446", "#ed6925", "#fb9b06", "#f7d13d", "#fcffa4"],
+                    opacity: 0.9,
+                    selector: { time: 0 }
+                }
+            },
+            {
+                id: 'burn-prob',
+                title: 'CONUS Burn Probability',
+                desc: 'High-resolution (30m) Zarr v3 dataset showing wildfire burn probability.',
+                center: [-98, 39], zoom: 4, pitch: 0,
+                config: {
+                    source: "https://carbonplan-share.s3.us-west-2.amazonaws.com/zarr-layer-examples/13-lvl-30m-4326-scott-BP.zarr",
+                    variable: "BP",
+                    clim: [0, 0.13],
+                    colormap: ["#000004", "#1b0c41", "#4a0c6b", "#781c6d", "#a52c60", "#cf4446", "#ed6925", "#fb9b06", "#f7d13d", "#fcffa4"],
+                    opacity: 0.9,
+                    spatial_dimensions: { lat: "latitude", lon: "longitude" },
+                    zarr_version: 3
+                }
+            }
+        ];
+
+        function buildZarrPanel() {
+            const list = document.getElementById('zarr-card-list');
+            ZARR_PRESETS.forEach(preset => {
+                const card = document.createElement('div');
+                card.className = 'zarr-card';
+                card.id = 'zarr-card-' + preset.id;
+                card.innerHTML = `
+                    <div class="zarr-card-title">${preset.title}</div>
+                    <div class="zarr-card-desc">${preset.desc}</div>
+                `;
+                card.addEventListener('click', () => loadZarrData(preset));
+                list.appendChild(card);
+            });
+        }
+        buildZarrPanel();
+
+        function toggleZarrPanel() {
+            const panel = document.getElementById('zarr-panel');
+            const isOpen = panel.classList.contains('show');
+            closeAllSubPanels();
+            if (!isOpen) {
+                panel.classList.add('show');
+                setActive('zarr_data', true);
+            } else {
+                setActive('zarr_data', false);
+            }
+        }
+
+        function removeZarrLayer() {
+            if (activeZarrLayer) {
+                map.removeLayer(activeZarrLayer);
+                activeZarrLayer = null;
+            }
+            document.querySelectorAll('.zarr-card').forEach(c => c.classList.remove('active'));
+            showToast('Zarr layer removed', 1500);
+        }
+
+        async function loadZarrData(preset) {
+            removeZarrLayer();
+            showToast('Loading Zarr ES Module...', 2000);
+
+            try {
+                if (!ZarrLayerClass) {
+                    const carbonplan = await import('https://cdn.jsdelivr.net/npm/@carbonplan/zarr-layer@0.4.1/+esm');
+                    ZarrLayerClass = carbonplan.ZarrLayer;
+                }
+
+                // Fly there
+                map.flyTo({ center: preset.center, zoom: preset.zoom, pitch: preset.pitch, duration: 2500, essential: true });
+
+                // Set active class
+                document.getElementById('zarr-card-' + preset.id).classList.add('active');
+
+                // Add Layer
+                const layerId = preset.id;
+                const layer = new ZarrLayerClass({ id: layerId, ...preset.config });
+
+                // wait for map style load if switching
+                if (map.isStyleLoaded()) {
+                    map.addLayer(layer);
+                } else {
+                    map.once('style.load', () => map.addLayer(layer));
+                }
+
+                activeZarrLayer = layerId;
+                showToast(`Zarr: ${preset.title} loaded`, 3000);
+
+            } catch (err) {
+                console.error("Zarr Error:", err);
+                showToast("Error loading Zarr layer: " + err.message, 5000);
+            }
+        }
 
     </script>
 
