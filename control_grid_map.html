@@ -2215,21 +2215,6 @@
                     opacity: 0.9,
                     selector: { time: 0 }
                 }
-            },
-            {
-                id: 'burn-prob',
-                title: 'CONUS Burn Probability',
-                desc: 'High-resolution (30m) Zarr v3 dataset showing wildfire burn probability.',
-                center: [-98, 39], zoom: 4, pitch: 0,
-                config: {
-                    source: "https://carbonplan-share.s3.us-west-2.amazonaws.com/zarr-layer-examples/13-lvl-30m-4326-scott-BP.zarr",
-                    variable: "BP",
-                    clim: [0, 0.13],
-                    colormap: ["#000004", "#1b0c41", "#4a0c6b", "#781c6d", "#a52c60", "#cf4446", "#ed6925", "#fb9b06", "#f7d13d", "#fcffa4"],
-                    opacity: 0.9,
-                    spatial_dimensions: { lat: "latitude", lon: "longitude" },
-                    zarr_version: 3
-                }
             }
         ];
 
