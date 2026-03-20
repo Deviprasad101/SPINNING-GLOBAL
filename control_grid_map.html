@@ -532,6 +532,47 @@
         }
 
         /* ═══════════════════════════════════════════
+       ROUTE TOOLTIP
+    ═══════════════════════════════════════════ */
+        #route-tooltip {
+            position: fixed;
+            bottom: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 18px;
+            color: var(--text);
+            font-size: .8rem;
+            backdrop-filter: blur(16px);
+            box-shadow: var(--shadow);
+            display: none;
+            z-index: 500;
+            text-align: center;
+        }
+
+        #route-tooltip.show {
+            display: block;
+        }
+
+        .route-mode-btn {
+            background: rgba(255, 255, 255, .1);
+            border: 1px solid var(--border);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: .65rem;
+            color: #e2e8f0;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .route-mode-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* ═══════════════════════════════════════════
        MINIMAP
     ═══════════════════════════════════════════ */
         #minimap-container {
@@ -990,6 +1031,17 @@
     <!-- Measure Tooltip -->
     <div id="measure-tooltip">📏 Click map to start measuring</div>
 
+    <!-- Route Tooltip -->
+    <div id="route-tooltip">
+        <div id="route-status">🚗 <b>Routing:</b> Click map to set Start point</div>
+        <div style="margin-top:6px; display:flex; gap:6px; justify-content:center;">
+            <button class="route-mode-btn active" id="route-mode-driving"
+                onclick="setRouteMode('driving')">Driving</button>
+            <button class="route-mode-btn" id="route-mode-walking" onclick="setRouteMode('walking')">Walking</button>
+            <button class="route-mode-btn" id="route-mode-cycling" onclick="setRouteMode('cycling')">Cycling</button>
+        </div>
+    </div>
+
     <!-- Query Filter Box -->
     <div id="filter-box">
         <div class="bp-title">Feature Query & Filter</div>
@@ -1302,6 +1354,7 @@
             document.getElementById('buildings-panel').classList.remove('show');
             document.getElementById('zarr-panel').classList.remove('show');
             stopMeasure();
+            stopRouting();
             if (typeof stopFilter === 'function') stopFilter();
         }
 
@@ -1381,6 +1434,7 @@
             { id: 'search', icon: '🔍', label: 'Search', tip: 'Search location', action: toggleSearch },
             { id: 'basemap', icon: '🗂️', label: 'Maps', tip: 'Switch basemap', action: toggleBasemap },
             { id: 'measure', icon: '📏', label: 'Measure', tip: 'Measure distance', action: toggleMeasure },
+            { id: 'route', icon: '🛣️', label: 'Route', tip: 'Directions & Routing', action: toggleRouting },
             { id: 'minimap', icon: '🗺️', label: 'Mini', tip: 'Mini map', action: toggleMinimap },
             { id: 'cluster', icon: '◉', label: 'Cluster', tip: 'Toggle earthquake clustering', action: toggleClustering },
             { id: 'zoomin', icon: '＋', label: 'Zoom+', tip: 'Zoom in', action: () => map.zoomIn() },
@@ -1786,6 +1840,115 @@
         }
         function totalDistance() {
             let d = 0; for (let i = 1; i < measurePoints.length; i++) d += haversine(measurePoints[i - 1], measurePoints[i]); return d;
+        }
+
+        // 8.5 Routing & Directions (OSRM API)
+        let isRouting = false;
+        let routeMode = 'driving';
+        let routePoints = [];
+        let routeMarkers = [];
+
+        function toggleRouting() {
+            isRouting = !isRouting;
+            const tooltip = document.getElementById('route-tooltip');
+            if (isRouting) {
+                routePoints = [];
+                tooltip.classList.add('show');
+                setRouteStatus('<b>Routing:</b> Click map to set Start point');
+                map.getCanvas().style.cursor = 'crosshair';
+                map.on('click', onRouteClick);
+            } else {
+                stopRouting();
+            }
+            setActive('route', isRouting);
+        }
+
+        function stopRouting() {
+            isRouting = false;
+            setActive('route', false);
+            map.getCanvas().style.cursor = '';
+            map.off('click', onRouteClick);
+            document.getElementById('route-tooltip').classList.remove('show');
+            routeMarkers.forEach(m => m.remove());
+            routeMarkers = [];
+            if (map.getSource('route-line')) { map.removeLayer('route-line-layer'); map.removeSource('route-line'); }
+        }
+
+        function setRouteMode(mode) {
+            routeMode = mode;
+            document.querySelectorAll('.route-mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('route-mode-' + mode).classList.add('active');
+            if (routePoints.length === 2) fetchRoute(); // Refresh route dynamically if 2 points exist
+        }
+
+        function setRouteStatus(html) {
+            const icon = routeMode === 'driving' ? '🚗 ' : routeMode === 'walking' ? '🚶 ' : '🚲 ';
+            document.getElementById('route-status').innerHTML = icon + html;
+        }
+
+        async function onRouteClick(e) {
+            if (!isRouting) return;
+            const pt = [e.lngLat.lng, e.lngLat.lat];
+
+            if (routePoints.length >= 2) {
+                // Reset if they click a 3rd time
+                routePoints = [];
+                routeMarkers.forEach(m => m.remove());
+                routeMarkers = [];
+                if (map.getSource('route-line')) { map.getSource('route-line').setData({ type: 'FeatureCollection', features: [] }); }
+            }
+
+            routePoints.push(pt);
+            // Green for start, Red for end
+            const color = routePoints.length === 1 ? '#10b981' : '#ef4444';
+            const mk = new maplibregl.Marker({ color }).setLngLat(pt).addTo(map);
+            routeMarkers.push(mk);
+
+            if (routePoints.length === 1) {
+                setRouteStatus('<b>Routing:</b> Click map to set Destination');
+            } else if (routePoints.length === 2) {
+                setRouteStatus('⏳ Fetching route...');
+                await fetchRoute();
+            }
+        }
+
+        async function fetchRoute() {
+            if (routePoints.length < 2) return;
+            const [p1, p2] = routePoints;
+            const url = `https://router.project-osrm.org/route/v1/${routeMode}/${p1[0]},${p1[1]};${p2[0]},${p2[1]}?overview=full&geometries=geojson`;
+
+            try {
+                const req = await fetch(url);
+                const res = await req.json();
+                if (res.code !== 'Ok') throw new Error(res.message);
+
+                const route = res.routes[0];
+                const distKm = (route.distance / 1000).toFixed(2);
+                const timeMin = Math.round(route.duration / 60);
+
+                const geom = route.geometry; // GeoJSON LineString
+                if (map.getSource('route-line')) {
+                    map.getSource('route-line').setData(geom);
+                } else {
+                    map.addSource('route-line', { type: 'geojson', data: geom });
+                    map.addLayer({
+                        id: 'route-line-layer', type: 'line', source: 'route-line',
+                        layout: { 'line-join': 'round', 'line-cap': 'round' },
+                        paint: { 'line-color': '#3b82f6', 'line-width': 5, 'line-opacity': 0.85 }
+                    });
+                }
+
+                setRouteStatus(`<b>Found:</b> ${distKm} km · ~${timeMin} mins <span style="margin-left:10px;cursor:pointer;color:#ef4444;font-weight:bold" onclick="stopRouting()">[✕ Clear]</span>`);
+
+                const bounds = new maplibregl.LngLatBounds(p1, p1);
+                bounds.extend(p2);
+                geom.coordinates.forEach(c => bounds.extend(c));
+                map.fitBounds(bounds, { padding: 80, duration: 1000 });
+
+            } catch (err) {
+                console.error('Routing error:', err);
+                setRouteStatus('<span style="color:#ef4444">❌ Route not found (water / too far)</span>');
+            }
         }
 
         // 9. Minimap
