@@ -2271,11 +2271,11 @@
                         'fill-extrusion-color': color,
                         'fill-extrusion-height': [
                             'interpolate', ['linear'], ['zoom'],
-                            14, 0, 14.05, ['get', 'render_height']
+                            14, 0, 14.05, ['*', ['get', 'render_height'], 3]
                         ],
                         'fill-extrusion-base': [
                             'interpolate', ['linear'], ['zoom'],
-                            14, 0, 14.05, ['get', 'render_min_height']
+                            14, 0, 14.05, ['*', ['get', 'render_min_height'], 3]
                         ],
                         'fill-extrusion-opacity': preset.opacity || 0.85,
                         'fill-extrusion-vertical-gradient': true
