@@ -1050,8 +1050,6 @@
             <button class="filter-btn" id="f-btn-clear">2. Clear Filter</button>
             <button class="filter-btn" id="f-btn-pop">Filter: Pop &gt; 100M</button>
             <button class="filter-btn" id="f-btn-eu">Filter: Europe</button>
-            <button class="filter-btn" id="f-btn-query">Query Rendered</button>
-            <button class="filter-btn" id="f-btn-query-af">Query African</button>
         </div>
         <div id="f-output" class="filter-output">Awaiting action...</div>
     </div>
@@ -2099,23 +2097,6 @@
             if (!countriesLoaded) return fOutput.innerHTML = "Load GeoJSON first.";
             map.setFilter("countries", null);
             fOutput.innerHTML = "Filter cleared: Showing all.";
-        });
-
-        document.getElementById('f-btn-query').addEventListener('click', () => {
-            if (!countriesLoaded) return fOutput.innerHTML = "Load GeoJSON first.";
-            const features = map.queryRenderedFeatures({ layers: ["countries"] });
-            const unique = new Set(features.map(f => f.properties.name || "Unknown"));
-            fOutput.innerHTML = `Rendered Features (${unique.size}):<br/>` + Array.from(unique).slice(0, 5).join(", ") + (unique.size > 5 ? "..." : "");
-        });
-
-        document.getElementById('f-btn-query-af').addEventListener('click', () => {
-            if (!countriesLoaded) return fOutput.innerHTML = "Load GeoJSON first.";
-            const features = map.queryRenderedFeatures({
-                layers: ["countries"],
-                filter: ["==", ["get", "continent"], "Africa"]
-            });
-            const unique = new Set(features.map(f => f.properties.name || "Unknown"));
-            fOutput.innerHTML = `African countries in viewport (${unique.size}):<br/>` + Array.from(unique).slice(0, 5).map(v => " - " + v).join("<br/>");
         });
 
         // ═══════════════════════════════════════════════════════
