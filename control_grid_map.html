@@ -2494,10 +2494,15 @@
         }
 
         function Globe() {
-            const [activeCity, setActiveCity] = useState(0);
-            const [times, setTimes] = useState({});
+            const [activeLocation, setActiveLocation] = useState(CITIES[0]);
+            const [currentTime, setCurrentTime] = useState("--:--:--");
             const [hovered, setHovered] = useState(null);
             const [basemapIndex, setBasemapIndex] = useState(2); // Default carto_dark
+
+            const [searchQuery, setSearchQuery] = useState("");
+            const [searchResults, setSearchResults] = useState([]);
+            const [isSearching, setIsSearching] = useState(false);
+
             const SIZE = 520;
 
             const [isVisible, setIsVisible] = useState(false);
@@ -2519,16 +2524,16 @@
                 if (!isVisible) return;
                 const update = () => {
                     const now = new Date();
-                    const t = {};
-                    CITIES.forEach((c) => {
-                        t[c.name] = now.toLocaleTimeString("en-US", { timeZone: c.tz, hour: "2-digit", minute: "2-digit", second: "2-digit" });
-                    });
-                    setTimes(t);
+                    try {
+                        setCurrentTime(now.toLocaleTimeString("en-US", { timeZone: activeLocation.tz, hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+                    } catch (e) {
+                        setCurrentTime("--:--:--");
+                    }
                 };
                 update();
                 const id = setInterval(update, 1000);
                 return () => clearInterval(id);
-            }, [isVisible]);
+            }, [isVisible, activeLocation]);
 
             // Auto-shift removed as requested
             // Initialize MapLibre
@@ -2578,8 +2583,13 @@
                 markersRef.current.forEach(m => m.remove());
                 markersRef.current = [];
 
-                CITIES.forEach((c, i) => {
-                    const isActive = i === activeCity;
+                const locationsToMark = [...CITIES];
+                if (!CITIES.some(c => c.name === activeLocation.name)) {
+                    locationsToMark.push(activeLocation);
+                }
+
+                locationsToMark.forEach((c) => {
+                    const isActive = c.name === activeLocation.name;
                     const el = document.createElement('div');
                     el.style.width = isActive ? '12px' : '6px';
                     el.style.height = isActive ? '12px' : '6px';
@@ -2603,7 +2613,7 @@
                         el.appendChild(pulse);
                     }
 
-                    el.addEventListener('mouseenter', () => { setHovered(i); setActiveCity(i); });
+                    el.addEventListener('mouseenter', () => { setHovered(c.name); setActiveLocation(c); });
                     el.addEventListener('mouseleave', () => setHovered(null));
 
                     const marker = new maplibregl.Marker({ element: el })
@@ -2611,9 +2621,39 @@
                         .addTo(map);
                     markersRef.current.push(marker);
                 });
-            }, [activeCity, isVisible]);
+            }, [activeLocation, isVisible]);
 
-            const city = CITIES[activeCity];
+            const handleSearch = async (e) => {
+                e.preventDefault();
+                if (!searchQuery.trim()) return;
+                setIsSearching(true);
+                try {
+                    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchQuery)}&count=5&format=json`);
+                    const data = await res.json();
+                    setSearchResults(data.results || []);
+                } catch (err) {
+                    console.error("Search error", err);
+                }
+                setIsSearching(false);
+            };
+
+            const selectLocation = (loc) => {
+                const newCity = {
+                    name: loc.name,
+                    country: loc.country || loc.name,
+                    lat: loc.latitude,
+                    lng: loc.longitude,
+                    tz: loc.timezone || "UTC"
+                };
+
+                setActiveLocation(newCity);
+                setSearchResults([]);
+                setSearchQuery("");
+
+                if (mapRef.current) {
+                    mapRef.current.flyTo({ center: [newCity.lng, newCity.lat], zoom: 6, pitch: 45, duration: 4000, essential: true });
+                }
+            };
 
             if (!isVisible) return null;
 
@@ -2639,6 +2679,56 @@
                     >
                         ✕ Close Monitor
                     </button>
+
+                    <div style={{
+                        position: "absolute",
+                        top: 32,
+                        left: 32,
+                        zIndex: 10,
+                        background: "rgba(3, 5, 15, 0.7)",
+                        padding: "16px",
+                        border: "1px solid #1a3a5e",
+                        borderRadius: "8px",
+                        backdropFilter: "blur(4px)",
+                        width: "300px"
+                    }}>
+                        <div style={{ fontSize: 10, letterSpacing: "0.2em", color: "#4af", textTransform: "uppercase", marginBottom: 8 }}>
+                            Search Location
+                        </div>
+                        <form onSubmit={handleSearch} style={{ display: "flex", gap: "8px" }}>
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Any country or city..."
+                                style={{
+                                    flex: 1, padding: "8px 12px", background: "rgba(255,255,255,0.1)",
+                                    border: "1px solid #1a3a5e", borderRadius: "4px", color: "#fff",
+                                    fontFamily: "'Courier New', monospace", outline: "none"
+                                }}
+                            />
+                            <button type="submit" disabled={isSearching} style={{
+                                background: "#2af", color: "#000", border: "none", padding: "0 12px",
+                                borderRadius: "4px", cursor: "pointer", fontWeight: "bold"
+                            }}>
+                                {isSearching ? "..." : "GO"}
+                            </button>
+                        </form>
+
+                        {searchResults.length > 0 && (
+                            <div style={{ marginTop: "8px", background: "rgba(0,0,0,0.8)", border: "1px solid #1a3a5e", borderRadius: "4px", maxHeight: "200px", overflowY: "auto" }}>
+                                {searchResults.map((res, i) => (
+                                    <div key={i} onClick={() => selectLocation(res)} style={{
+                                        padding: "8px 12px", cursor: "pointer", borderBottom: i === searchResults.length - 1 ? "none" : "1px solid #1a3a5e",
+                                        color: "#e8f4ff", fontSize: "12px", transition: "0.2s"
+                                    }} onMouseEnter={(e) => e.target.style.background = 'rgba(34,170,255,0.2)'}
+                                        onMouseLeave={(e) => e.target.style.background = 'transparent'}>
+                                        {res.name}{res.country && res.name !== res.country ? `, ${res.country}` : ''}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
                     <style>{`
                         @keyframes twinkle {
@@ -2677,7 +2767,7 @@
                     />
 
                     {/* Active city info - Floating Bottom Left */}
-                    <div key={activeCity} style={{
+                    <div key={activeLocation.name} style={{
                         position: "absolute",
                         bottom: 32,
                         left: 32,
@@ -2691,18 +2781,18 @@
                         backdropFilter: "blur(4px)"
                     }}>
                         <div style={{ fontSize: 13, letterSpacing: "0.35em", color: "#4af", textTransform: "uppercase", marginBottom: 4 }}>
-                            {city.country}
+                            {activeLocation.country}
                         </div>
                         <div style={{ fontSize: 32, fontWeight: 900, color: "#e8f4ff", letterSpacing: "0.1em", textTransform: "uppercase", textShadow: "0 0 20px #2af8" }}>
-                            {city.name}
+                            {activeLocation.name}
                         </div>
                         <div style={{ fontSize: 26, color: "#2af", fontVariantNumeric: "tabular-nums", letterSpacing: "0.05em", marginTop: 4 }}>
-                            {times[city.name] || "--:--:--"}
+                            {currentTime}
                         </div>
                         <div style={{ marginTop: 6, fontSize: 10, color: "#4af8", letterSpacing: "0.3em" }}>
-                            {city.lat > 0 ? city.lat.toFixed(2) + "°N" : Math.abs(city.lat).toFixed(2) + "°S"}
+                            {activeLocation.lat > 0 ? activeLocation.lat.toFixed(2) + "°N" : Math.abs(activeLocation.lat).toFixed(2) + "°S"}
                             {"  "}
-                            {city.lng > 0 ? city.lng.toFixed(2) + "°E" : Math.abs(city.lng).toFixed(2) + "°W"}
+                            {activeLocation.lng > 0 ? activeLocation.lng.toFixed(2) + "°E" : Math.abs(activeLocation.lng).toFixed(2) + "°W"}
                         </div>
                     </div>
 
@@ -2723,13 +2813,13 @@
                             background: "rgba(3, 5, 15, 0.6)", padding: "12px", borderRadius: "8px", border: "1px solid #1a3a5e",
                             backdropFilter: "blur(4px)"
                         }}>
-                            {CITIES.map((c, i) => (
+                            {CITIES.map((c) => (
                                 <button key={c.name}
-                                    onClick={() => setActiveCity(i)}
+                                    onClick={() => setActiveLocation(c)}
                                     style={{
-                                        background: activeCity === i ? "rgba(34,170,255,0.15)" : "transparent",
-                                        border: `1px solid ${activeCity === i ? "#2af" : "#1a3a5e"}`,
-                                        color: activeCity === i ? "#2af" : "#4a7a9a",
+                                        background: activeLocation.name === c.name ? "rgba(34,170,255,0.15)" : "transparent",
+                                        border: `1px solid ${activeLocation.name === c.name ? "#2af" : "#1a3a5e"}`,
+                                        color: activeLocation.name === c.name ? "#2af" : "#4a7a9a",
                                         padding: "4px 8px", borderRadius: 4,
                                         fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase",
                                         cursor: "pointer", transition: "all 0.2s",
