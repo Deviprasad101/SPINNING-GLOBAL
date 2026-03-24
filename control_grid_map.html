@@ -1084,6 +1084,31 @@
             Zarr Layer</button>
     </div>
 
+    <!-- Time Slider panel -->
+    <div id="time-slider-panel" class="bp3-search-wrap"
+        style="position:fixed; top:calc(var(--top-bar-height) + 16px); right:270px; z-index:350; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); backdrop-filter:blur(24px); box-shadow:var(--shadow); padding:14px; display:none; width:360px;">
+        <div class="bp3-title">⏱️ Time Slider</div>
+        <div class="bp3-subtitle">Filter map data dynamically using an interactive slider.</div>
+        <div style="margin-bottom:12px">
+            <input type="range" id="ts-slider" min="2000" max="2024" step="1" value="2000"
+                style="width:100%; cursor:pointer;">
+            <div
+                style="display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:4px;">
+                <span id="ts-min-label">2000</span>
+                <span id="ts-val-label" style="color:var(--accent); font-weight:bold; font-size:.85rem;">2000</span>
+                <span id="ts-max-label">2024</span>
+            </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button class="bp3-toggle" id="ts-play-btn" style="flex:1" onclick="toggleTimeSliderPlay()">▶ Play</button>
+            <button class="bp3-toggle" id="ts-load-btn" style="flex:2" onclick="loadSampleTimeData()">Load
+                Quakes</button>
+        </div>
+        <button class="bp3-toggle"
+            style="margin-top:8px; background:rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4);"
+            onclick="removeTimeSlider()">Clear Time Data</button>
+    </div>
+
     <!-- Hint pill -->
     <div id="hint-pill">☰ <strong>Top-right</strong> → open Control Grid to explore all tools</div>
 
@@ -1351,6 +1376,7 @@
             document.getElementById('filter-box').classList.remove('show');
             document.getElementById('buildings-panel').classList.remove('show');
             document.getElementById('zarr-panel').classList.remove('show');
+            document.getElementById('time-slider-panel').style.display = 'none';
             stopMeasure();
             stopRouting();
             if (typeof stopFilter === 'function') stopFilter();
@@ -1446,6 +1472,7 @@
             { id: 'monitor', icon: '🛰️', label: 'Monitor', tip: 'Global Monitor (React)', action: () => { document.getElementById('react-globe-root').style.display = 'block'; closePanel(); } },
             { id: '3dbuildilngs', icon: '🏙️', label: '3D City', tip: '3D Buildings Map', action: toggleBuildingsPanel },
             { id: 'zarr_data', icon: '🔥', label: 'Zarr', tip: 'Cloud-native Zarr Data', action: toggleZarrPanel },
+            { id: 'time_slider', icon: '⏱️', label: 'Time', tip: 'Time Slider Filter', action: toggleTimeSliderPanel },
         ];
 
         function buildGrid() {
@@ -2388,6 +2415,114 @@
                 setActive('zarr_data', true);
             } else {
                 setActive('zarr_data', false);
+            }
+        }
+
+        let tsInterval = null;
+        let isTsPlaying = false;
+
+        function toggleTimeSliderPanel() {
+            const panel = document.getElementById('time-slider-panel');
+            const isOpen = panel.style.display === 'block';
+            closeAllSubPanels();
+            if (!isOpen) {
+                panel.style.display = 'block';
+                setActive('time_slider', true);
+            } else {
+                panel.style.display = 'none';
+                setActive('time_slider', false);
+            }
+        }
+
+        const tsSlider = document.getElementById('ts-slider');
+        const tsValLabel = document.getElementById('ts-val-label');
+
+        tsSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            tsValLabel.textContent = val;
+            updateTimeFilter(val);
+        });
+
+        function updateTimeFilter(year) {
+            if (map.getLayer('ts-quakes')) {
+                // Filter where year <= current slider year
+                map.setFilter('ts-quakes', ['<=', ['get', 'year'], year]);
+            }
+        }
+
+        function toggleTimeSliderPlay() {
+            isTsPlaying = !isTsPlaying;
+            const btn = document.getElementById('ts-play-btn');
+            if (isTsPlaying) {
+                btn.innerHTML = '⏸ Pause';
+                btn.classList.add('active');
+                tsInterval = setInterval(() => {
+                    let val = parseInt(tsSlider.value, 10) + 1;
+                    if (val > parseInt(tsSlider.max, 10)) val = parseInt(tsSlider.min, 10);
+                    tsSlider.value = val;
+                    tsValLabel.textContent = val;
+                    updateTimeFilter(val);
+                }, 600); // 600ms per step
+            } else {
+                btn.innerHTML = '▶ Play';
+                btn.classList.remove('active');
+                clearInterval(tsInterval);
+            }
+        }
+
+        function removeTimeSlider() {
+            if (isTsPlaying) toggleTimeSliderPlay();
+            if (map.getLayer('ts-quakes')) map.removeLayer('ts-quakes');
+            if (map.getSource('ts-quakes-source')) map.removeSource('ts-quakes-source');
+        }
+
+        async function loadSampleTimeData() {
+            removeTimeSlider();
+            showToast('Loading real USGS earthquake data...', 2000);
+
+            try {
+                // Fetch real earthquakes around India (lat: 7.5 to 36.5, lng: 67.5 to 96.5) from 2000 to 2024
+                // Min magnitude is set to 4.5 to keep the response fast and limit rendering 
+                const url = 'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2000-01-01&endtime=2024-12-31&minmagnitude=4.5&minlatitude=7.5&maxlatitude=36.5&minlongitude=67.5&maxlongitude=96.5';
+                const response = await fetch(url);
+                const data = await response.json();
+
+                // Format properties so our slider and paint logic works exactly the same
+                data.features.forEach(f => {
+                    const date = new Date(f.properties.time);
+                    f.properties.year = date.getFullYear();
+                    f.properties.magnitude = f.properties.mag || 4.5;
+                });
+
+                map.addSource('ts-quakes-source', {
+                    type: 'geojson',
+                    data: data
+                });
+
+                map.addLayer({
+                    id: 'ts-quakes',
+                    type: 'circle',
+                    source: 'ts-quakes-source',
+                    paint: {
+                        'circle-radius': [
+                            'interpolate', ['linear'], ['get', 'magnitude'],
+                            4.5, 3,
+                            8, 15
+                        ],
+                        'circle-color': '#ff4444',
+                        'circle-opacity': 0.8,
+                        'circle-stroke-width': 1,
+                        'circle-stroke-color': '#ffffff'
+                    }
+                });
+
+                // Initial filter
+                updateTimeFilter(parseInt(tsSlider.value, 10));
+                showToast(`Loaded ${data.features.length} real earthquakes!`, 3000);
+                map.flyTo({ center: [82, 22], zoom: 4.5, duration: 2000 });
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to load USGS earthquake data', 4000);
             }
         }
 
