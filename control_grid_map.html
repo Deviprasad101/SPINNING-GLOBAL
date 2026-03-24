@@ -2660,7 +2660,10 @@
                 const update = () => {
                     const now = new Date();
                     try {
-                        setCurrentTime(now.toLocaleTimeString("en-US", { timeZone: activeLocation.tz, hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+                        const timeStr = now.toLocaleTimeString("en-US", { timeZone: activeLocation.tz, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                        setCurrentTime(timeStr);
+                        const popupTimeEl = document.getElementById('active-popup-time');
+                        if (popupTimeEl) popupTimeEl.innerText = timeStr;
                     } catch (e) {
                         setCurrentTime("--:--:--");
                     }
@@ -2725,35 +2728,34 @@
 
                 locationsToMark.forEach((c) => {
                     const isActive = c.name === activeLocation.name;
-                    const el = document.createElement('div');
-                    el.style.width = isActive ? '12px' : '6px';
-                    el.style.height = isActive ? '12px' : '6px';
-                    el.style.background = isActive ? '#2af' : '#7df';
-                    el.style.borderRadius = '50%';
-                    el.style.boxShadow = isActive ? '0 0 10px #2af, 0 0 20px #2af' : 'none';
-                    el.style.transition = 'all 0.3s';
-                    el.style.position = 'relative';
-                    el.style.cursor = 'pointer';
 
-                    if (isActive) {
-                        const pulse = document.createElement('div');
-                        pulse.style.width = '24px';
-                        pulse.style.height = '24px';
-                        pulse.style.border = '1px solid #2af';
-                        pulse.style.borderRadius = '50%';
-                        pulse.style.position = 'absolute';
-                        pulse.style.left = '-7px';
-                        pulse.style.top = '-7px';
-                        pulse.style.animation = 'pulse-ring 1.5s ease-out infinite';
-                        el.appendChild(pulse);
-                    }
-
-                    el.addEventListener('mouseenter', () => { setHovered(c.name); setActiveLocation(c); });
-                    el.addEventListener('mouseleave', () => setHovered(null));
-
-                    const marker = new maplibregl.Marker({ element: el })
+                    const marker = new maplibregl.Marker({
+                        color: isActive ? '#2af' : '#4a7a9a',
+                        scale: isActive ? 1.0 : 0.6
+                    })
                         .setLngLat([c.lng, c.lat])
                         .addTo(map);
+
+                    marker.getElement().addEventListener('mouseenter', () => { setActiveLocation(c); });
+                    marker.getElement().style.cursor = 'pointer';
+
+                    if (isActive) {
+                        let timeStr = "--:--:--";
+                        try {
+                            timeStr = new Date().toLocaleTimeString("en-US", { timeZone: c.tz, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                        } catch (e) { }
+
+                        const popup = new maplibregl.Popup({ offset: 35, closeButton: false, closeOnClick: false, className: 'monitor-popup' })
+                            .setHTML(`<div style="padding: 2px; font-family: 'Courier New', monospace; text-align: center; color: #fff;">
+                                          <div style="font-size: 14px; font-weight: bold; text-transform: uppercase;">${c.name}</div>
+                                          <div id="active-popup-time" style="font-size: 13px; color: #2af; margin-top: 4px; font-weight: bold;">
+                                              ${timeStr}
+                                          </div>
+                                      </div>`);
+                        marker.setPopup(popup);
+                        marker.togglePopup();
+                    }
+
                     markersRef.current.push(marker);
                 });
             }, [activeLocation, isVisible]);
@@ -2786,7 +2788,7 @@
                 setSearchQuery("");
 
                 if (mapRef.current) {
-                    mapRef.current.flyTo({ center: [newCity.lng, newCity.lat], zoom: 6, pitch: 45, duration: 4000, essential: true });
+                    mapRef.current.flyTo({ center: [newCity.lng, newCity.lat], zoom: 12, pitch: 50, duration: 4000, essential: true });
                 }
             };
 
@@ -2889,6 +2891,17 @@
                         }
                         .monitor-map-container .maplibregl-canvas {
                             background: transparent !important;
+                        }
+                        .monitor-popup .maplibregl-popup-content {
+                            background: rgba(3, 5, 15, 0.8) !important;
+                            border: 1px solid #1a3a5e !important;
+                            backdrop-filter: blur(4px);
+                            border-radius: 8px;
+                            box-shadow: 0 0 15px rgba(34, 170, 255, 0.2);
+                        }
+                        .monitor-popup .maplibregl-popup-tip {
+                            border-top-color: rgba(3, 5, 15, 0.8) !important;
+                            border-bottom-color: rgba(3, 5, 15, 0.8) !important;
                         }
                     `}</style>
 
