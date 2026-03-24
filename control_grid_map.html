@@ -2765,9 +2765,27 @@
                 if (!searchQuery.trim()) return;
                 setIsSearching(true);
                 try {
+                    // 1) Try Open-Meteo Geocoding first (gives great timezones natively)
                     const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchQuery)}&count=5&format=json`);
                     const data = await res.json();
-                    setSearchResults(data.results || []);
+
+                    if (data.results && data.results.length > 0) {
+                        setSearchResults(data.results);
+                    } else {
+                        // 2) Fallback to OpenStreetMap (Nominatim) for massive localized coverage
+                        const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=5`);
+                        const osmData = await osmRes.json();
+
+                        const mappedResults = osmData.map(item => ({
+                            name: item.name || item.display_name.split(',')[0],
+                            country: item.display_name.split(',').slice(1, 3).join(',').trim(), // Extract region/country
+                            latitude: parseFloat(item.lat),
+                            longitude: parseFloat(item.lon),
+                            // Graceful fallback to user's local timezone since granular local searches usually map to their home region
+                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+                        }));
+                        setSearchResults(mappedResults);
+                    }
                 } catch (err) {
                     console.error("Search error", err);
                 }
