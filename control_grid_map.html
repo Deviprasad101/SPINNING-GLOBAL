@@ -2698,7 +2698,7 @@
         }
 
         function getFieldsSpatialFilter() {
-            return FIELDS_VIEW_POLYGON ? ['within', ['literal', FIELDS_VIEW_POLYGON]] : null;
+            return FIELDS_VIEW_POLYGON ? ['within', FIELDS_VIEW_POLYGON] : null;
         }
 
         function ensureFieldsProtocol() {
