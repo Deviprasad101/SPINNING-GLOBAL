@@ -1028,6 +1028,22 @@
         <div id="search-results"></div>
     </div>
 
+    <!-- Layer Opacity Panel -->
+    <div id="opacity-panel"
+        style="position:fixed; top:calc(var(--top-bar-height) + 16px); right:270px; z-index:350; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); backdrop-filter:blur(24px); box-shadow:var(--shadow); padding:14px; display:none; width:300px;">
+        <div class="bp3-title">🎚️ Layer Opacity</div>
+        <div class="bp3-subtitle">Adjust the active basemap opacity.</div>
+        <div style="margin-bottom:8px;">
+            <input type="range" id="opacity-slider" min="0" max="1" step="0.05" value="1"
+                style="width:100%; cursor:pointer;">
+            <div style="display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:4px;">
+                <span>0%</span>
+                <span id="opacity-val-label" style="color:var(--accent); font-weight:bold; font-size:.85rem;">100%</span>
+                <span>100%</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Measure Tooltip -->
     <div id="measure-tooltip">📏 Click map to start measuring</div>
 
@@ -1377,6 +1393,7 @@
             document.getElementById('buildings-panel').classList.remove('show');
             document.getElementById('zarr-panel').classList.remove('show');
             document.getElementById('time-slider-panel').style.display = 'none';
+            document.getElementById('opacity-panel').style.display = 'none';
             stopMeasure();
             stopRouting();
             if (typeof stopFilter === 'function') stopFilter();
@@ -1457,6 +1474,7 @@
             { id: 'terrain', icon: '⛰️', label: '3D', tip: '3D Terrain', action: toggleTerrain },
             { id: 'search', icon: '🔍', label: 'Search', tip: 'Search location', action: toggleSearch },
             { id: 'basemap', icon: '🗂️', label: 'Maps', tip: 'Switch basemap', action: toggleBasemap },
+            { id: 'opacity', icon: '🎚️', label: 'Alpha', tip: 'Basemap opacity slider', action: toggleOpacityPanel },
             { id: 'measure', icon: '📏', label: 'Measure', tip: 'Measure distance', action: toggleMeasure },
             { id: 'route', icon: '🛣️', label: 'Route', tip: 'Directions & Routing', action: toggleRouting },
             { id: 'minimap', icon: '🗺️', label: 'Mini', tip: 'Mini map', action: toggleMinimap },
@@ -1763,6 +1781,64 @@
             if (!isOpen) bp.classList.add('show');
             setActive('basemap', !isOpen);
         }
+
+        // 7.1 Basemap opacity slider
+        let basemapOpacity = 1;
+        const dataLayerIds = new Set(['earthquakes', 'clusters', 'cluster-count', 'unclustered-point', 'countries', 'buildings', 'buildings-extrusion', 'measure-line-layer', 'route-line-layer', 'zarr-layer']);
+
+        function applyBasemapOpacity() {
+            // For raster basemaps (have 'raster-layer')
+            if (map.getLayer('raster-layer')) {
+                map.setPaintProperty('raster-layer', 'raster-opacity', basemapOpacity);
+                return;
+            }
+            
+            // For vector basemaps (CartoDB, etc.) — adjust all non-data layers
+            const style = map.getStyle();
+            if (!style || !style.layers) return;
+            
+            style.layers.forEach(layer => {
+                if (dataLayerIds.has(layer.id)) return;
+                try {
+                    if (layer.type === 'raster') {
+                        map.setPaintProperty(layer.id, 'raster-opacity', basemapOpacity);
+                    } else if (['fill', 'line', 'symbol', 'circle'].includes(layer.type)) {
+                        map.setPaintProperty(layer.id, layer.type + '-opacity', basemapOpacity);
+                    }
+                } catch (e) {
+                    /* skip */
+                }
+            });
+        }
+
+        function toggleOpacityPanel() {
+            const op = document.getElementById('opacity-panel');
+            const isOpen = op.style.display === 'block';
+            
+            if (isOpen) {
+                // Close panel and deselect button
+                op.style.display = 'none';
+                setActive('opacity', false);
+            } else {
+                // Close all other panels and open this one
+                closeAllSubPanels();
+                op.style.display = 'block';
+                setActive('opacity', true);
+            }
+        }
+
+        // Opacity slider event listener
+        const opacitySlider = document.getElementById('opacity-slider');
+        const opacityValLabel = document.getElementById('opacity-val-label');
+        opacitySlider.addEventListener('input', (e) => {
+            basemapOpacity = Number(e.target.value);
+            opacityValLabel.textContent = `${Math.round(basemapOpacity * 100)}%`;
+            applyBasemapOpacity();
+        });
+        
+        map.on('style.load', () => {
+            applyBasemapOpacity();
+        });
 
         // Build basemap grid
         const bpGrid = document.getElementById('bp-grid');
