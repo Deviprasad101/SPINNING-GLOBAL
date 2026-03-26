@@ -1,6 +1,5 @@
 from flask import Flask, send_from_directory
 import os
-
 import logging
 
 app = Flask(__name__)
