@@ -1045,6 +1045,22 @@
         </div>
     </div>
 
+    <!-- Spin Speed Panel -->
+    <div id="spin-speed-panel"
+        style="position:fixed; top:calc(var(--top-bar-height) + 16px); right:270px; z-index:350; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); backdrop-filter:blur(24px); box-shadow:var(--shadow); padding:14px; display:none; width:300px;">
+        <div class="bp3-title">🔄 Spin Speed</div>
+        <div class="bp3-subtitle">Control the globe rotation speed.</div>
+        <div style="margin-bottom:8px;">
+            <input type="range" id="spin-speed-slider" min="1" max="200" step="1" value="50"
+                style="width:100%; cursor:pointer;">
+            <div style="display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:4px;">
+                <span>Slow (1)</span>
+                <span id="spin-speed-val-label" style="color:var(--accent); font-weight:bold; font-size:.85rem;">50</span>
+                <span>Hyper (200)</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Measure Tooltip -->
     <div id="measure-tooltip">📏 Click map to start measuring</div>
 
@@ -1395,6 +1411,7 @@
             document.getElementById('zarr-panel').classList.remove('show');
             document.getElementById('time-slider-panel').style.display = 'none';
             document.getElementById('opacity-panel').style.display = 'none';
+            document.getElementById('spin-speed-panel').style.display = 'none';
             stopMeasure();
             stopRouting();
             if (typeof stopFilter === 'function') stopFilter();
@@ -1466,11 +1483,12 @@
         let isMinimapOn = false;
         let minimapMap = null;
         let isClusteringOn = false;
+        let spinSpeed = 50; // Default 1-100 speed (50 = normal)
 
         const CONTROLS = [
             { id: 'fullscreen', icon: '⛶', label: 'Full', tip: 'Fullscreen', action: toggleFullscreen },
             { id: 'globe', icon: '🌐', label: 'Globe', tip: 'Globe projection', action: toggleGlobe },
-            { id: 'spin', icon: '🔄', label: 'Spin', tip: 'Spin globe', action: toggleSpin },
+            { id: 'spin', icon: '🔄', label: 'Spin', tip: 'Spin globe (adjust speed while spinning)', action: toggleSpin },
             { id: 'north', icon: '🧭', label: 'North', tip: 'Reset bearing', action: resetNorth },
             { id: 'terrain', icon: '⛰️', label: '3D', tip: '3D Terrain', action: toggleTerrain },
             { id: 'search', icon: '🔍', label: 'Search', tip: 'Search location', action: toggleSearch },
@@ -1489,7 +1507,7 @@
             { id: 'fit', icon: '⊡', label: 'Fit', tip: 'Fit whole world', action: fitWorld },
             { id: 'query_filter', icon: '🎛️', label: 'Filter', tip: 'Feature Query & Filter', action: toggleFilterBox },
             { id: 'monitor', icon: '🛰️', label: 'Monitor', tip: 'Global Monitor (React)', action: () => { document.getElementById('react-globe-root').style.display = 'block'; closePanel(); } },
-            { id: '3dbuildilngs', icon: '🏙️', label: '3D City', tip: '3D Buildings Map', action: toggleBuildingsPanel },
+            { id: '3dbuildings', icon: '🏙️', label: '3D City', tip: '3D Buildings Map', action: toggleBuildingsPanel },
             { id: 'zarr_data', icon: '🔥', label: 'Zarr', tip: 'Cloud-native Zarr Data', action: toggleZarrPanel },
             { id: 'time_slider', icon: '⏱️', label: 'Time', tip: 'Time Slider Filter', action: toggleTimeSliderPanel },
             { id: 'fields_of_world', icon: '🌾', label: 'Fields', tip: 'Agricultural Field Boundaries', action: toggleFieldsOfWorld },
@@ -1589,13 +1607,25 @@
             }
         }
 
-        // 3. Spin
+        // 3. Spin with dynamic speed (speed panel opens automatically)
         function toggleSpin() {
             isSpin = !isSpin;
             setActive('spin', isSpin);
             if (isSpin) {
-                spinInterval = setInterval(() => { map.setBearing((map.getBearing() + 0.5) % 360); }, 40);
+                // Show speed panel when spinning starts
+                const panel = document.getElementById('spin-speed-panel');
+                panel.style.display = 'block';
+                
+                const baseSpeed = 1.2; // increased base speed for faster rotation
+                const speedFactor = spinSpeed / 50; // 50 is the default
+                const bearing = baseSpeed * speedFactor;
+                const interval = Math.max(5, 40 / speedFactor); // faster speed = shorter interval (min 5ms)
+                spinInterval = setInterval(() => { map.setBearing((map.getBearing() + bearing) % 360); }, interval);
+                showToast(`🔄 Spinning at ${spinSpeed}% speed — adjust speed in panel`, 1500);
             } else {
+                // Hide speed panel when spinning stops
+                const panel = document.getElementById('spin-speed-panel');
+                panel.style.display = 'none';
                 clearInterval(spinInterval);
             }
         }
@@ -1837,6 +1867,24 @@
             opacityValLabel.textContent = `${Math.round(basemapOpacity * 100)}%`;
             applyBasemapOpacity();
         });
+        
+        // Spin speed slider event listener
+        const spinSpeedSlider = document.getElementById('spin-speed-slider');
+        const spinSpeedValLabel = document.getElementById('spin-speed-val-label');
+        if (spinSpeedSlider) {
+            spinSpeedSlider.addEventListener('input', (e) => {
+                spinSpeed = Number(e.target.value);
+                spinSpeedValLabel.textContent = spinSpeed;
+                if (isSpin) {
+                    clearInterval(spinInterval);
+                    const baseSpeed = 0.5;
+                    const speedFactor = spinSpeed / 50;
+                    const bearing = baseSpeed * speedFactor;
+                    const interval = Math.max(10, 40 / speedFactor);
+                    spinInterval = setInterval(() => { map.setBearing((map.getBearing() + bearing) % 360); }, interval);
+                }
+            });
+        }
         
         map.on('style.load', () => {
             applyBasemapOpacity();
