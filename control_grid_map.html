@@ -2337,6 +2337,13 @@
             { name: 'Ahmedabad', icon: '🪁', center: [72.5714, 23.0225], zoom: 15, pitch: 58, bearing: 50, color: '#ec4899', opacity: 0.85, terrain: null },
         ];
 
+        const SEARCH_3D_PRESET = {
+            color: '#38bdf8',
+            opacity: 0.9,
+            terrain: null,
+            minzoom: 14
+        };
+
         activeBuildingPreset = CITY_PRESETS[0];
 
         const defaultBuildingColorExpr = [
@@ -2781,8 +2788,7 @@
                             essential: true 
                         });
                         
-                        const searchPreset = { color: null, opacity: 0.85, terrain: null, minzoom: 14 };
-                        load3DBuildings(searchPreset, null);
+                        load3DBuildings(SEARCH_3D_PRESET, null);
                         showToast(`📍 ${name} — 3D buildings loading...`);
                         
                         document.querySelectorAll('.city-card').forEach(c => c.classList.remove('active'));
