@@ -2826,11 +2826,10 @@
 
                 // Remove previous
                 if (map.getLayer('3d-buildings')) map.removeLayer('3d-buildings');
-                if (map.getSource('ofm-buildings')) { /* source shared, keep it */ }
-                else {
+                if (!map.getSource('ofm-buildings')) {
                     map.addSource('ofm-buildings', {
                         type: 'vector',
-                        url: 'https://tiles.openfreemap.org/planet',
+                        url: 'https://tiles.openfreemap.org/planet.json',
                     });
                 }
 
