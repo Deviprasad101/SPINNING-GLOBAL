@@ -1056,9 +1056,11 @@
         <div style="margin-bottom:8px;">
             <input type="range" id="opacity-slider" min="0" max="1" step="0.05" value="1"
                 style="width:100%; cursor:pointer;">
-            <div style="display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:4px;">
+            <div
+                style="display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:4px;">
                 <span>0%</span>
-                <span id="opacity-val-label" style="color:var(--accent); font-weight:bold; font-size:.85rem;">100%</span>
+                <span id="opacity-val-label"
+                    style="color:var(--accent); font-weight:bold; font-size:.85rem;">100%</span>
                 <span>100%</span>
             </div>
         </div>
@@ -1072,9 +1074,11 @@
         <div style="margin-bottom:8px;">
             <input type="range" id="spin-speed-slider" min="1" max="200" step="1" value="50"
                 style="width:100%; cursor:pointer;">
-            <div style="display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:4px;">
+            <div
+                style="display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:4px;">
                 <span>Slow (1)</span>
-                <span id="spin-speed-val-label" style="color:var(--accent); font-weight:bold; font-size:.85rem;">50</span>
+                <span id="spin-speed-val-label"
+                    style="color:var(--accent); font-weight:bold; font-size:.85rem;">50</span>
                 <span>Hyper (200)</span>
             </div>
         </div>
@@ -1127,27 +1131,35 @@
 
         <div class="bp3-control-block">
             <div class="bp3-title" style="margin-bottom:6px;">📏 Dynamic Height Scaling</div>
-            <input id="bp3-height-scale" type="range" min="1" max="8" step="0.1" value="3" style="width:100%; cursor:pointer;">
-            <div style="display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:4px;">
+            <input id="bp3-height-scale" type="range" min="1" max="8" step="0.1" value="3"
+                style="width:100%; cursor:pointer;">
+            <div
+                style="display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:4px;">
                 <span>1x</span>
-                <span id="bp3-height-scale-label" style="color:var(--accent); font-weight:bold; font-size:.82rem;">3.0x</span>
+                <span id="bp3-height-scale-label"
+                    style="color:var(--accent); font-weight:bold; font-size:.82rem;">3.0x</span>
                 <span>8x</span>
             </div>
         </div>
 
         <div class="bp3-control-block">
             <div class="bp3-title" style="margin-bottom:6px;">💡 Lighting Effects</div>
-            <input id="bp3-light-intensity" type="range" min="0.1" max="3.0" step="0.05" value="1.0" style="width:100%; cursor:pointer;">
-            <div style="display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:4px;">
+            <input id="bp3-light-intensity" type="range" min="0.1" max="3.0" step="0.05" value="1.0"
+                style="width:100%; cursor:pointer;">
+            <div
+                style="display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:4px;">
                 <span>Soft</span>
-                <span id="bp3-light-intensity-label" style="color:var(--accent); font-weight:bold; font-size:.82rem;">1.00</span>
+                <span id="bp3-light-intensity-label"
+                    style="color:var(--accent); font-weight:bold; font-size:.82rem;">1.00</span>
                 <span>Ultra</span>
             </div>
         </div>
 
         <div class="bp3-row-actions">
-            <button class="bp3-toggle" id="bp3-daynight-btn" style="flex:1;" onclick="toggleDayNightMode()">🌙 Night Mode</button>
-            <button class="bp3-toggle" id="bp3-fly-btn" style="flex:1;" onclick="toggleFlyThrough()">🎬 Start Fly-Through</button>
+            <button class="bp3-toggle" id="bp3-daynight-btn" style="flex:1;" onclick="toggleDayNightMode()">🌙 Night
+                Mode</button>
+            <button class="bp3-toggle" id="bp3-fly-btn" style="flex:1;" onclick="toggleFlyThrough()">🎬 Start
+                Fly-Through</button>
         </div>
     </div>
 
@@ -1658,7 +1670,7 @@
                 // Show speed panel when spinning starts
                 const panel = document.getElementById('spin-speed-panel');
                 panel.style.display = 'block';
-                
+
                 const baseSpeed = 1.2; // increased base speed for faster rotation
                 const speedFactor = spinSpeed / 50; // 50 is the default
                 const bearing = baseSpeed * speedFactor;
@@ -1867,11 +1879,11 @@
                 map.setPaintProperty('raster-layer', 'raster-opacity', basemapOpacity);
                 return;
             }
-            
+
             // For vector basemaps (CartoDB, etc.) — adjust all non-data layers
             const style = map.getStyle();
             if (!style || !style.layers) return;
-            
+
             style.layers.forEach(layer => {
                 if (dataLayerIds.has(layer.id)) return;
                 try {
@@ -1889,7 +1901,7 @@
         function toggleOpacityPanel() {
             const op = document.getElementById('opacity-panel');
             const isOpen = op.style.display === 'block';
-            
+
             if (isOpen) {
                 // Close panel and deselect button
                 op.style.display = 'none';
@@ -1910,7 +1922,7 @@
             opacityValLabel.textContent = `${Math.round(basemapOpacity * 100)}%`;
             applyBasemapOpacity();
         });
-        
+
         // Spin speed slider event listener
         const spinSpeedSlider = document.getElementById('spin-speed-slider');
         const spinSpeedValLabel = document.getElementById('spin-speed-val-label');
@@ -1928,7 +1940,7 @@
                 }
             });
         }
-        
+
         map.on('style.load', () => {
             applyBasemapOpacity();
         });
@@ -1957,6 +1969,10 @@
                 map.once('style.load', () => {
                     if (isGlobe) {
                         try { map.setProjection({ type: 'globe' }); } catch (e) { }
+                    }
+                    // Re-apply 3D buildings if they were active before basemap switch
+                    if (is3DBuildingsOn && activeBuildingPreset) {
+                        load3DBuildings(activeBuildingPreset, active3DCity);
                     }
                 });
                 // ── Sync minimap to the same basemap ──
@@ -2700,7 +2716,7 @@
                     grid.appendChild(card);
                 });
             }
-            
+
             // Initialize search once
             initBuildingsSearch();
             init3DBuildingAdvancedControls();
@@ -2715,7 +2731,7 @@
 
             const inp = document.getElementById('bp3-search-input');
             const resultBox = document.getElementById('bp3-search-results');
-            
+
             if (!inp || !resultBox) {
                 console.error('Search elements not found');
                 return;
@@ -2724,10 +2740,10 @@
             inp.addEventListener('input', () => {
                 clearTimeout(bp3SearchTimer);
                 const q = inp.value.trim();
-                if (q.length < 2) { 
-                    resultBox.innerHTML = ''; 
-                    resultBox.classList.remove('open'); 
-                    return; 
+                if (q.length < 2) {
+                    resultBox.innerHTML = '';
+                    resultBox.classList.remove('open');
+                    return;
                 }
                 resultBox.innerHTML = '<div class="bp3-search-result-item" style="color:#94a3b8; font-size:.75rem;">🔍 Searching...</div>';
                 resultBox.classList.add('open');
@@ -2749,54 +2765,54 @@
                 const response = await fetch(url, {
                     headers: { 'Accept': 'application/json' }
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`API error: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
                 resultBox.innerHTML = '';
-                
+
                 if (!data || data.length === 0) {
                     resultBox.innerHTML = '<div class="bp3-search-result-item" style="color:#64748b; padding:10px; text-align:center; font-size:.75rem;">📍 No results found</div>';
                     resultBox.classList.add('open');
                     return;
                 }
-                
+
                 data.forEach(item => {
                     const el = document.createElement('div');
                     el.className = 'bp3-search-result-item';
                     el.style.cursor = 'pointer';
-                    
+
                     const parts = item.display_name.split(',');
                     const name = parts[0].trim();
                     const sub = parts.slice(1, 3).join(',').trim();
-                    
+
                     el.innerHTML = `
                         <div style="font-weight:600; color:#f1f5f9; font-size:.8rem;">${name}</div>
                         <div class="result-sub">${sub || '📍'}</div>
                     `;
-                    
+
                     el.addEventListener('click', () => {
                         const center = [parseFloat(item.lon), parseFloat(item.lat)];
-                        map.flyTo({ 
-                            center, 
-                            zoom: 15, 
-                            pitch: 60, 
-                            bearing: -17, 
-                            duration: 2000, 
-                            essential: true 
+                        map.flyTo({
+                            center,
+                            zoom: 15,
+                            pitch: 60,
+                            bearing: -17,
+                            duration: 2000,
+                            essential: true
                         });
-                        
+
                         load3DBuildings(SEARCH_3D_PRESET, null);
                         showToast(`📍 ${name} — 3D buildings loading...`);
-                        
+
                         document.querySelectorAll('.city-card').forEach(c => c.classList.remove('active'));
                         active3DCity = null;
                         resultBox.classList.remove('open');
                         document.getElementById('bp3-search-input').value = name;
                     });
-                    
+
                     resultBox.appendChild(el);
                 });
                 resultBox.classList.add('open');
@@ -2814,7 +2830,7 @@
             if (!isOpen) {
                 panel.classList.add('show');
                 setActive('3dbuildings', true);
-                if (!is3DBuildingsOn) load3DBuildings(CITY_PRESETS[0], 0);
+                buildBuildingsPanel();
             } else {
                 setActive('3dbuildings', false);
             }
@@ -2824,16 +2840,17 @@
             const doLoad = () => {
                 activeBuildingPreset = preset || activeBuildingPreset || CITY_PRESETS[0];
 
-                // Remove previous
+                // Always remove old layer + source to allow clean re-add (especially after style switches)
                 if (map.getLayer('3d-buildings')) map.removeLayer('3d-buildings');
-                if (!map.getSource('ofm-buildings')) {
-                    map.addSource('ofm-buildings', {
-                        type: 'vector',
-                        url: 'https://tiles.openfreemap.org/planet.json',
-                    });
-                }
+                if (map.getSource('ofm-buildings')) map.removeSource('ofm-buildings');
 
-                // Find a label layer to insert buildings below
+                // Add fresh OFM vector tile source (correct URL — no .json suffix)
+                map.addSource('ofm-buildings', {
+                    type: 'vector',
+                    url: 'https://tiles.openfreemap.org/planet',
+                });
+
+                // Find a label layer to insert buildings below (so labels stay on top)
                 let labelLayerId;
                 const layers = map.getStyle().layers;
                 for (let i = 0; i < layers.length; i++) {
@@ -2844,20 +2861,26 @@
                 const presetOpacity = activeBuildingPreset.opacity || 0.85;
                 const resolvedOpacity = isNightMode ? Math.max(0.55, presetOpacity - 0.15) : presetOpacity;
 
-                map.addLayer({
-                    id: '3d-buildings',
-                    source: 'ofm-buildings',
-                    'source-layer': 'building',
-                    type: 'fill-extrusion',
-                    minzoom: activeBuildingPreset.minzoom || 14,
-                    paint: {
-                        'fill-extrusion-color': color,
-                        'fill-extrusion-height': getBuildingHeightExpr(buildingHeightScale),
-                        'fill-extrusion-base': getBuildingBaseExpr(buildingHeightScale),
-                        'fill-extrusion-opacity': resolvedOpacity,
-                        'fill-extrusion-vertical-gradient': true
-                    }
-                }, labelLayerId);
+                try {
+                    map.addLayer({
+                        id: '3d-buildings',
+                        source: 'ofm-buildings',
+                        'source-layer': 'building',
+                        type: 'fill-extrusion',
+                        minzoom: activeBuildingPreset.minzoom || 14,
+                        paint: {
+                            'fill-extrusion-color': color,
+                            'fill-extrusion-height': getBuildingHeightExpr(buildingHeightScale),
+                            'fill-extrusion-base': getBuildingBaseExpr(buildingHeightScale),
+                            'fill-extrusion-opacity': resolvedOpacity,
+                            'fill-extrusion-vertical-gradient': true
+                        }
+                    }, labelLayerId);
+                } catch (layerErr) {
+                    console.error('3D buildings layer error:', layerErr);
+                    showToast('❌ Could not add 3D buildings layer', 3000);
+                    return;
+                }
 
                 is3DBuildingsOn = true;
                 document.getElementById('bp3-toggle-btn').classList.add('active');
@@ -2877,6 +2900,8 @@
                 } else {
                     map.setTerrain(null);
                 }
+
+                showToast('🏙️ 3D buildings loading — zoom to city level (14+) to see them', 3500);
             };
 
             if (map.isStyleLoaded()) doLoad();
