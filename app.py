@@ -20,6 +20,11 @@ def serve_file(path):
     return send_from_directory(BASE_DIR, path)
 
 if __name__ == '__main__':
+    # Use a less commonly occupied default port so this app does not clash with
+    # other local services that often use 5000 (which can return unrelated JSON).
+    port = int(os.environ.get("PORT", 5050))
+    debug = os.environ.get("FLASK_DEBUG", "1") == "1"
+
     print("Starting Flask server...")
-    print("Access the map at: http://127.0.0.1:5000")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    print(f"Access the map at: http://127.0.0.1:{port}")
+    app.run(host='0.0.0.0', port=port, debug=debug)
